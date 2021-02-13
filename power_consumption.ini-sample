@@ -1,0 +1,10 @@
+[routeB]
+# USBドングルのパス
+# mac: /dev/tty.usbserial-XXXXXXXX (XXXXXXXXは文字列)
+# win: COMx (xは数字)
+# linux: /dev/ttyUSBx (xは数字)
+device = /dev/tty.usbserial-XXXXXXXX
+# Bルートの認証ID
+id = <Bルートの認証ID>
+# Bルートのパスワード
+password = <Bルートのパスワード>
