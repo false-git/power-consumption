@@ -46,3 +46,79 @@
 * PDC(1B): EDTのバイト数
 * EDT: プロパティ値データ
 
+## SKコマンド
+
+* コマンドマニュアルは、モジュールのメーカーのサイトからダウンロードする。
+  * ROHMも、TESSERAも、マニュアルはパスワードがないとダウンロードできない。(ので、ここにはURLを書かない)
+* 応答がないコマンドは、`OK` が返る。(失敗したときは `FAIL ERxx` が返る)
+* 応答があるコマンドは、応答の後に `OK`が返る。
+  * SKINFO → EINFO
+  * SKSREG(読み出し) → ESREG
+* コマンドの応答以外に、非同期に(?)イベントが発生するらしい
+  * ERXUDP
+  * ERXTCP
+  * EPONG
+  * ETCP
+  * EADDR
+  * ENEIGHBOR
+  * EPANDESC
+  * EEDSCAN
+  * EHANDLE
+  * EVENT
+    * 0x20: Beaconを受信した
+    * 0x21: UDP送信完了
+    * 0x24: PANA接続失敗
+    * 0x25: PANA接続成功
+    * 0x26: 接続相手からセッション終了要求を受信した
+    * 0x29: セッションのライフタイムが経過して期限切れになった
+      * これを受信したら、再接続のシーケンスが走るので、0x24か0x25が来るまで通信をやめた方が良いらしい。
+* SKSCAN: スキャン
+  * MODE: 2を指定するとアクティブスキャン(Information Elementあり)
+  * CHANNELMASK: FFFFFFFF で全チャンネル
+  * DURATION: 各チャンネルのスキャン時間。`0.01 sec * (2^<DURATION> + 1)`
+    * 0-14, 6以上推奨
+* SKSENDTO: UDP送信
+  * HANDLE: ハンドル。良くわからないけど1で良い。
+  * IPADDR: 送信先のIPv6アドレス
+  * PORT: ポート番号。ECHONET は 3610(0E1A)固定。
+  * SEC: セキュリティフラグ。1を指定
+  * DATALEN: DATAのバイト数(4桁の16進数)
+  * DATA: ここだけバイナリ。ECHONET電文を指定する。
+* ERXUDP: UDP受信
+  * SENDER: 送信元IPv6アドレス
+  * DEST: 送信先IPv6アドレス
+  * RPORT: 送信元ポート
+  * LPORT: 送信先ポート
+  * SENDERLLA: 送信元MACアドレス
+  * SECURED: 暗号化されていたら1
+  * DATALEN: DATAのバイト数(4桁の16進数)
+  * DATA: データ(16進数文字列)
+
+### 使いそうなシーケンス
+
+* アクティブスキャン
+  * →`SKSCAN 2 FFFFFFFF 6`
+  * ←`OK`
+  * ←`EVENT 20`
+  * ←`EPANDESC`
+  * ←`  Channel:39`
+  * ←`  Pan ID:FFFF`
+  * ←`  Addr:FFFFFFFFFFFFFFFF`
+  * ←(他にも来るが、使うのは上くらい)
+  * ←`EVENT 22 FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX`
+  * アクティブスキャンでは、Pairing IDが一致した相手だけが応答してくる。
+  * Pairing IDは、SKSETRBIDで設定した Route B ID の末尾8byte
+* MACアドレス→IPv6アドレス変換
+  * →`SKLL64 XXXXXXXXXXXXXXXX`
+  * ←`FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX`
+  * これだけ、OKとかExxxとかなしでアドレスが返ってくる。
+* PANA接続シーケンス
+  * →`SKJOIN FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX`
+  * ←`OK`
+  * ←`EVENT 25 FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX 00`
+  * 接続失敗のときは EVENT 24 が返ってくる。
+* 瞬時電力計測値の読み出し
+  * →`SKSENDTO 1 FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX 0E1A 1 000E`
+  * ←`EVENT 21 FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX 00`
+  * ←`OK`
+  * ←`ERXUDP FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX FE80:0000:0000:0000:XXXX:XXXX:XXXX:XXXX 0E1A 0E1A XXXXXXXXXXXXXXXX 1 0012 1081000102880105FF017201E704000002AE`
