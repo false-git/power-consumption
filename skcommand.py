@@ -1,6 +1,6 @@
 """SKコマンド."""
 
-import serial
+import serial  # type: ignore
 import typing as typ
 
 
@@ -36,7 +36,7 @@ class SKSerial:
         self.serial.write(f"{line}\r\n".encode("utf-8"))
 
     def skinfo(self) -> typ.Dict[str, str]:
-        """SKINFOコマンドを実行する。
+        """SKINFOコマンドを実行する.
 
         Returns:
             SKINFOの応答をdictで
