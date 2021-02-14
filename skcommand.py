@@ -165,7 +165,6 @@ class SKSerial:
         for duration in range(4, 8):
             self.writeline(f"SKSCAN 2 FFFFFFFF {duration:X}")
             success, response = self.readresponse(r"EVENT 22.*")
-            result = {}
             if success:
                 for line in response:
                     if line.startswith("  "):
@@ -173,4 +172,34 @@ class SKSerial:
                         result[parts[0]] = parts[1]
                 if "Channel" in result and "Pan ID" in result and "Addr" in result:
                     break
+                result = {}
         return result
+
+    def skll64(self, addr: str) -> str:
+        """MACアドレスをIPv6アドレスに変換.
+
+        Args:
+            addr: MACアドレス
+
+        Returns:
+            IPv6アドレス。失敗した場合はエラーコード
+        """
+        self.writeline(f"SKLL64 {addr}")
+        success, response = self.readresponse(r"([0-9A-F]{4}:){7}[0-9A-F]{4}")
+        return response[0]
+
+    def skjoin(self, ipv6addr: str) -> bool:
+        """PAA接続シーケンス.
+
+        Args:
+            ipv6addr: 接続先のIPv6アドレス
+
+        Returns:
+            成功したらTrue
+        """
+        self.writeline(f"SKJOIN {ipv6addr}")
+        success, response = self.readresponse(r"EVENT 2[45].*")
+        for line in response:
+            if line.startswith("EVENT 25"):
+                return True
+        return False

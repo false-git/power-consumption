@@ -2,6 +2,7 @@
 
 import argparse
 import configparser
+import re
 import sys
 import typing as typ
 import skcommand
@@ -46,12 +47,53 @@ class PowerConsumption:
             print("ルートBの認証情報の設定に失敗しました。")
             sys.exit(1)
 
-        connection_info: typ.Dict[str, str] = self.sk.scan_pan()
-        print(connection_info)
+        connection_params: typ.Optional[typ.Dict[str, str]] = self.scan()
+        if connection_params is None:
+            sys.exit(1)
+        if not self.join(connection_params):
+            # TODO: リトライとかをどうするか要検討
+            sys.exit(1)
 
-    def scan(self) -> None:
-        """SKSCANでスマートメーターを探す."""
-        pass
+    def scan(self) -> typ.Optional[typ.Dict[str, str]]:
+        """SKSCANでスマートメーターを探し、接続パラメータを取得.
+
+        Returns:
+            成功したときはパラメータのdict、失敗したらNone
+        """
+        params: typ.Dict[str, str] = self.sk.scan_pan()
+        if len(params) == 0:
+            print("スマートメーターが見つかりませんでした。")
+            return None
+        addr: str = params["Addr"]
+        ipv6addr: str = self.sk.skll64(addr)
+        if re.match(r"([0-9A-F]{4}:){7}[0-9A-F]{4}", ipv6addr):
+            print(f"スマートメーターのIPv6アドレスの取得に失敗しました。 [{ipv6addr}]")
+            return None
+        params["IPv6Addr"] = ipv6addr
+        return params
+
+    def join(self, params: typ.Dict[str, str]) -> bool:
+        """PANA接続シーケンス.
+
+        Args:
+            params: 接続パラメータ
+
+        Returns:
+            成功したらTrue
+        """
+        channel: str = params["Channel"]
+        pan_id: str = params["Pan ID"]
+        ipv6addr: str = params["IPv6Addr"]
+        if self.sk.sksreg(0x2, channel) is None:
+            print("チャンネルの設定に失敗しました。")
+            return False
+        if self.sk.sksreg(0x3, pan_id) is None:
+            print("チャンネルの設定に失敗しました。")
+            return False
+        if not self.sk.skjoin(ipv6addr):
+            print("PANA接続シーケンスに失敗しました。")
+            return False
+        return True
 
 
 if __name__ == "__main__":
