@@ -8,3 +8,6 @@ device = /dev/tty.usbserial-XXXXXXXX
 id = <Bルートの認証ID>
 # Bルートのパスワード
 password = <Bルートのパスワード>
+
+# DB URL
+db_url = postgresql://<username>:<password>@<hostname>/<dbname>

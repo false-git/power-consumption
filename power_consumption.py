@@ -13,6 +13,7 @@ def main() -> None:
     device: str = inifile.get("routeB", "device")
     # id: str = inifile.get("routeB", "id")
     # password: str = inifile.get("routeB", "password")
+    # db_url: str = inifile.get("routeB", "db_url")
 
     parser: argparse.ArgumentParser = argparse.ArgumentParser()
     parser.add_argument("-i", "--info", action="store_true", help="send SKINFO command")
