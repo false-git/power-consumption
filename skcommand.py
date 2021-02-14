@@ -4,6 +4,7 @@ import datetime
 import serial  # type: ignore
 import typing as typ
 import re
+import echonet
 
 BAUDRATE = 115200
 re_OK: str = r"\s*OK\s*"
@@ -203,3 +204,27 @@ class SKSerial:
             if line.startswith("EVENT 25"):
                 return True
         return False
+
+    def get_prop(self, ipv6addr: str, epc_list: typ.List[int]) -> typ.Optional[typ.List[echonet.EProperty]]:
+        """プロパティ取得.
+
+        Args:
+            ipv6addr: UDP送信先IPv6アドレス
+            epc_list: 読み出すプロパティのEPCのリスト
+
+        Returns:
+            読み出したプロパティ値。失敗したらNone
+        """
+        frame: echonet.ECHONETLiteFrame = echonet.ECHONETLiteFrame()
+        for epc in epc_list:
+            frame.add_property(echonet.EProperty(epc))
+        bin: bytes = frame.to_bytes()
+        self.writeline(f"SKSENDTO 1 {ipv6addr} 0E1A 1 {len(bin):04X} ", bin)
+        success, response = self.readresponse(r"ERXUDP.*")
+        if success:
+            for line in response:
+                if line.startswith("ERXUDP"):
+                    token: typ.List[str] = line.split()
+                    frame = echonet.ECHONETLiteFrame.from_hex(token[-1])
+                    return frame.properties
+        return None

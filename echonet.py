@@ -24,15 +24,7 @@ class EProperty:
     """ECHONET プロパティ."""
 
     epc: int = EPC_瞬時電力計測値
-    edt: typ.List[int] = dataclasses.field(default_factory=list)
-
-    def add_data(self, d: int) -> None:
-        """データを追加する.
-
-        Args:
-            d: データ
-        """
-        self.edt.append(d)
+    edt: bytes = bytes(0)
 
     def to_bytes(self) -> bytes:
         """byte表記を返す.
@@ -40,7 +32,7 @@ class EProperty:
         Returns:
             byte表記のEDATA
         """
-        return bytes([self.epc, len(self.edt), *self.edt])
+        return bytes([self.epc, len(self.edt)]) + self.edt
 
     def hex(self) -> str:
         """16進文字列表記を返す.
@@ -64,10 +56,10 @@ class EProperty:
         """
         epc: int
         pdc: int
-        edt: typ.List[int] = []
+        edt: bytes = bytes(0)
         epc, pdc = struct.unpack_from("BB", b, offset)
         if pdc > 0:
-            edt = list(struct.unpack_from("B" * pdc, b, offset + 2))
+            edt = b[offset + 2 : offset + 2 + pdc]
         return EProperty(epc, edt), offset + 2 + pdc
 
 

@@ -1,6 +1,7 @@
 """DBストア."""
 
 import datetime
+import typing as typ
 import psycopg2  # type: ignore
 import psycopg2.extensions  # type: ignore
 import psycopg2.extras  # type: ignore
@@ -56,7 +57,15 @@ class DBStore:
         )
         self.connection.commit()
 
-    def power_log(self, 係数: int, 積算電力量: int, 電力量単位: int, 瞬時電力: int, 瞬時電流_R: int, 瞬時電流_T: int) -> None:
+    def power_log(
+        self,
+        係数: typ.Optional[int],
+        積算電力量: typ.Optional[int],
+        電力量単位: typ.Optional[int],
+        瞬時電力: typ.Optional[int],
+        瞬時電流_R: typ.Optional[int],
+        瞬時電流_T: typ.Optional[int],
+    ) -> None:
         """スマートメータープロパティの値を登録する.
 
         Args:
