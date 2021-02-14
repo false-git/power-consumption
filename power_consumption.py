@@ -5,6 +5,7 @@ import configparser
 import re
 import struct
 import sys
+import time
 import typing as typ
 import db_store
 import echonet
@@ -56,8 +57,7 @@ class PowerConsumption:
             # TODO: リトライとかをどうするか要検討
             sys.exit(1)
 
-        # お試し実装
-        print(self.get_prop())
+        self.task()
 
     def scan(self) -> bool:
         """SKSCANでスマートメーターを探し、接続パラメータを取得.
@@ -154,6 +154,18 @@ class PowerConsumption:
         del store
 
         return True
+
+    def task(self) -> None:
+        """1分間隔で繰り返し実行."""
+        interval: int = 60
+        while True:
+            timestamp: int = int(time.time()) // interval
+            if not self.get_prop():
+                break
+            now: float = time.time()
+            now_t: int = int(now) // interval
+            if timestamp == now_t:
+                time.sleep((now_t + 1) * interval - now)
 
 
 if __name__ == "__main__":
