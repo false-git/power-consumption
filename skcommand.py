@@ -5,7 +5,6 @@ import serial  # type: ignore
 import typing as typ
 import re
 
-
 BAUDRATE = 115200
 re_OK: str = r"\s*OK\s*"
 
@@ -66,16 +65,22 @@ class SKSerial:
                 break
         return success, response
 
-    def writeline(self, line: str, debug: bool = False) -> None:
+    def writeline(self, line: str, bin: typ.Optional[bytes] = None) -> None:
         """テキストを1行書き込む.
 
         Args:
             line: 1行分のテキスト
-            debug: 出力内容をそのままdebug_printするときTrue
+            bin: バイナリデータ
         """
-        if debug:
-            self.debug_print(f"SEND [{line}]")
-        self.serial.write(f"{line}\r\n".encode("utf-8"))
+        if self.debug:
+            if bin is None:
+                self.debug_print(f"SEND [{line}]")
+            else:
+                self.debug_print(f"SEND [{line}{bin.hex()}]")
+        if bin is None:
+            self.serial.write(f"{line}\r\n".encode("utf-8"))
+        else:
+            self.serial.write(line.encode("utf-8") + bin)
 
     def skinfo(self) -> typ.Dict[str, str]:
         """SKINFOコマンドを実行する.
@@ -83,7 +88,7 @@ class SKSerial:
         Returns:
             SKINFOの応答をdictで
         """
-        self.writeline("SKINFO", True)
+        self.writeline("SKINFO")
         success, response = self.readresponse()
         result: typ.Dict[str, str] = {}
         if success:
@@ -95,7 +100,7 @@ class SKSerial:
             result["RESPONSE"] = response[0]
         return result
 
-    def sksreg(self, reg: int, val: typ.Optional[str] = None) -> typ.Dict[str, str]:
+    def sksreg(self, reg: int, val: typ.Optional[str] = None) -> typ.Optional[str]:
         """SKSREGコマンドを実行する.
 
         Args:
@@ -103,23 +108,23 @@ class SKSerial:
             val: 設定する場合は not None
 
         Returns:
-            応答をdictで
+            失敗の時はNone、成功のときは読み出した値またはOK
         """
         if val is None:
-            self.writeline(f"SKSREG S{reg:02X}", True)
+            self.writeline(f"SKSREG S{reg:02X}")
         else:
-            self.writeline(f"SKSREG S{reg:02X} {val}", True)
+            self.writeline(f"SKSREG S{reg:02X} {val}")
         success, response = self.readresponse()
 
-        result: typ.Dict[str, str] = {}
+        result: typ.Optional[str] = None
         if success:
-            result1: typ.List[str] = response[0].split()
             if val is None:
-                result_names: typ.Tuple = ("RESPONSE", "VALUE")
-                for name, value in zip(result_names, result1):
-                    result[name] = value
-        else:
-            result["RESPONSE"] = response[0]
+                result1: typ.List[str] = response[0].split(maxsplit=1)
+                # 存在しないレジスタを読み出そうとしたときは、空文字列が返る
+                if len(result1) > 1:
+                    result = result1[1]
+            else:
+                result = response[0]
         return result
 
     def routeB_auth(self, id: str, password: str) -> bool:
@@ -158,7 +163,7 @@ class SKSerial:
         result: typ.Dict[str, str] = {}
         duration: int
         for duration in range(4, 8):
-            self.writeline(f"SKSCAN 2 FFFFFFFF {duration:X}", True)
+            self.writeline(f"SKSCAN 2 FFFFFFFF {duration:X}")
             success, response = self.readresponse(r"EVENT 22.*")
             result = {}
             if success:
