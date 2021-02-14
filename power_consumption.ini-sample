@@ -4,6 +4,8 @@
 # win: COMx (xは数字)
 # linux: /dev/ttyUSBx (xは数字)
 device = /dev/tty.usbserial-XXXXXXXX
+# デバッグフラグ
+debug = True
 # Bルートの認証ID
 id = <Bルートの認証ID>
 # Bルートのパスワード

@@ -12,6 +12,9 @@ EOJ_SMARTMETER: int = 0x0288  # 住宅・設備関連機器クラスグループ
 ESV_SetI: int = 0x60  # プロパティ値書き込み要求（応答不要）
 ESV_Get: int = 0x62  # プロパティ値読み出し要求
 ESV_Get_Res: int = 0x72  # プロパティ値読み出し応答
+EPC_係数: int = 0xD3
+EPC_積算電力量計測値: int = 0xE0
+EPC_積算電力量単位: int = 0xE1
 EPC_瞬時電力計測値: int = 0xE7
 EPC_瞬時電流計測値: int = 0xE8
 
