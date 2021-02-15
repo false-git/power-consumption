@@ -56,16 +56,16 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
         datadict["time"].append(row["created_at"])
         datadict["電力量"].append(calc_電力量(row))
         datadict["電力"].append(row["瞬時電力"])
-        datadict["電流R"].append(row["瞬時電流_R"])
-        datadict["電流T"].append(row["瞬時電流_T"])
+        datadict["電流R"].append(row["瞬時電流_r"] / 10.)
+        datadict["電流T"].append(row["瞬時電流_t"] / 10.)
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
-        ("time", "@time(%F %F}"),
-        ("積算電力量", "@電力量"),
-        ("瞬時電力", "@電力"),
-        ("瞬時電流(R相)", "@電流R"),
-        ("瞬時電流(T相)", "@電流T"),
+        ("time", "@time{%F %T}"),
+        ("積算電力量", "@{電力量}"),
+        ("瞬時電力", "@{電力}"),
+        ("瞬時電流(R相)", "@{電流R}"),
+        ("瞬時電流(T相)", "@{電流T}"),
     ]
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
 
@@ -75,12 +75,13 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
         x_axis_type="datetime",
         x_axis_label="時刻",
         y_axis_label="電力量[kWh]",
-        sizing_mode="scale_both",
+        sizing_mode="stretch_both",
     )
     fig.add_tools(hover_tool)
-    fig.extra_y_ranges["W"] = bm.Range1d()
-    fig.add_layout(bm.LinearAxis(y_range_name="W", axis_label="電力[kW]"), "left")
-    fig.extra_y_ranges["A"] = bm.Range1d()
+    fig.y_range = bm.Range1d(0, max(datadict["電力量"]))
+    fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]))
+    fig.add_layout(bm.LinearAxis(y_range_name="W", axis_label="電力[W]"), "left")
+    fig.extra_y_ranges["A"] = bm.Range1d(0, max(datadict["電流R"]))
     fig.add_layout(bm.LinearAxis(y_range_name="A", axis_label="電流[A]"), "right")
 
     fig.line("time", "電力量", legend_label="積算電力量", line_color="red", source=source)
