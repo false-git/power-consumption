@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 power_consumption.ini
+poetry.lock
