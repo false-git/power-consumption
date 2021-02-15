@@ -82,24 +82,38 @@ class DBStore:
         )
         self.connection.commit()
 
-    def select_scan_log(self, start_date: datetime.datetime, end_date: datetime.datetime):
+    def select_scan_log(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> typ.List[psycopg2.extras.DictRow]:
         """scan_logからデータ取得.
 
         Args:
-            start_date: 取得範囲の最初(start_dateを含む)
-            end_date: 取得範囲の最初(end_dateを含まない)
+            start_time: 取得範囲の最初(start_timeを含む)
+            end_time: 取得範囲の最初(end_timeを含まない)
+
+        Returns:
+            データ
         """
-        self.cursor.execute("select * from scan_log where created_at >= %s and created_at < %s", (start_date, end_date))
+        self.cursor.execute(
+            "select * from scan_log where created_at >= %s and created_at < %s order by created_at",
+            (start_time, end_time),
+        )
         return self.cursor.fetchall()
 
-    def select_power_log(self, start_date: datetime.datetime, end_date: datetime.datetime):
+    def select_power_log(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> typ.List[psycopg2.extras.DictRow]:
         """power_logからデータ取得.
 
         Args:
-            start_date: 取得範囲の最初(start_dateを含む)
-            end_date: 取得範囲の最初(end_dateを含まない)
+            start_time: 取得範囲の最初(start_timeを含む)
+            end_time: 取得範囲の最初(end_timeを含まない)
+
+        Returns:
+            データ
         """
         self.cursor.execute(
-            "select * from power_log where created_at >= %s and created_at < %s", (start_date, end_date)
+            "select * from power_log where created_at >= %s and created_at < %s order by created_at",
+            (start_time, end_time),
         )
         return self.cursor.fetchall()

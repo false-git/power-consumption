@@ -2,13 +2,24 @@
 
 スマートメーターから ECHONET Lite 経由で消費電力を読み出します。
 
+## 使い方
+
+* python 3.9以上と、poetry が使える状態にします。
+* `poetry install --no-dev` で実行環境を整えます。
+  * ※ macOSだと numpy 1.20 がインストールできなかったので、numpyのバージョンを 1.19 未満に制限しています。mac以外の場合は、pyproject.toml から numpy の行を削除できます。
+* power_consumption.ini-sample を power_consumption.ini にコピーし、必要な項目を設定します。
+* postgresql に専用のデータベースを作成します。
+* `poetry run power_consumption.py` でデータを収集して DB に格納します。
+* `poetry run power_graph.py` で当日分のグラフを生成します。
+* それぞれ、-h をつけて実行するとヘルプが出ます。
+
 ## 参考
 
 * [Skyley Networks　/　Bルートやってみた](http://www.skyley.com/products/b-route.html)
 * [スマートメーターの情報を最安ハードウェアで引っこ抜く - Qiita](https://qiita.com/rukihena/items/82266ed3a43e4b652adb)
 * [Pythonでスマートメーターの情報を引っこ抜く - Qiita](https://qiita.com/kanon700/items/d4df13d45c2a9d16b8b0)
 
-## ECHONET Lite
+### ECHONET Lite
 
 * エコーネット規格（一般公開） | ECHONET
   * [ECHONET Lite規格書 Ver.1.12（日本語版）のダウンロード ファイルリスト](https://echonet.jp/spec_v112_lite/)
@@ -46,7 +57,7 @@
 * PDC(1B): EDTのバイト数
 * EDT: プロパティ値データ
 
-## SKコマンド
+### SKコマンド
 
 * コマンドマニュアルは、モジュールのメーカーのサイトからダウンロードする。
   * ROHMも、TESSERAも、マニュアルはパスワードがないとダウンロードできない。(ので、ここにはURLを書かない)
@@ -94,7 +105,7 @@
   * DATALEN: DATAのバイト数(4桁の16進数)
   * DATA: データ(16進数文字列)
 
-### 使いそうなシーケンス
+#### 使いそうなシーケンス
 
 * アクティブスキャン
   * →`SKSCAN 2 FFFFFFFF 6`

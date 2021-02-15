@@ -8,6 +8,8 @@ authors = ["false <false@wizard-limit.net>"]
 python = "^3.9"
 pyserial = "^3.5"
 psycopg2-binary = "^2.8.6"
+numpy = "<1.19"
+bokeh = "^2.2.3"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
