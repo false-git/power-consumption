@@ -31,7 +31,8 @@ def main() -> None:
         瞬時電流_R: int = int(random.uniform(0, 100))
         瞬時電流_T: int = int(random.uniform(0, 100))
         cursor.execute(
-            "insert into power_log (係数, 積算電力量, 電力量単位, 瞬時電力, 瞬時電流_R, 瞬時電流_T, created_at) values (%s, %s, %s, %s, %s, %s, %s)",
+            "insert into power_log (係数, 積算電力量, 電力量単位, 瞬時電力, 瞬時電流_R, 瞬時電流_T, created_at)"
+            " values (%s, %s, %s, %s, %s, %s, %s)",
             (係数, 積算電力量, 電力量単位, 瞬時電力, 瞬時電流_R, 瞬時電流_T, timestamp),
         )
         timestamp += timedelta
