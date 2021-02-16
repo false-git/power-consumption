@@ -22,7 +22,7 @@ def make_temp_graph(output_file: str, data: typ.List) -> None:
         datadict[col] = []
     for row in data:
         datadict["time"].append(row["created_at"])
-        datadict["temp"].append(row["temp"] / 100)
+        datadict["temp"].append(row["temp"] / 1000)
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
@@ -40,7 +40,9 @@ def make_temp_graph(output_file: str, data: typ.List) -> None:
         sizing_mode="stretch_both",
     )
     fig.add_tools(hover_tool)
-    fig.y_range = bm.Range1d(0, 50 if len(datadict["temp"]) == 0 else max(datadict["temp"]))
+    if len(data) > 0:
+        ymax: int = int(max(datadict["temp"]) + 10)
+        fig.y_range = bm.Range1d(0, ymax)
 
     fig.line("time", "temp", legend_label="温度", line_color="red", source=source)
 
