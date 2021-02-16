@@ -128,6 +128,7 @@ def main() -> None:
     data: typ.List = store.select_power_log(start_time, end_time)
 
     make_power_graph(output_file, data)
+    print(output_file)
 
 
 if __name__ == "__main__":
