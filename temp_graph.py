@@ -32,9 +32,9 @@ def make_temp_graph(output_file: str, data: typ.List) -> None:
     ]
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
 
-    bp.output_file(output_file, title="Temp")
+    bp.output_file(output_file, title="Temperature")
     fig: bp.figure = bp.figure(
-        title="Temp",
+        title="Temperature",
         x_axis_type="datetime",
         x_axis_label="時刻",
         y_axis_label="温度[℃]",
