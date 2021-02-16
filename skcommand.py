@@ -23,6 +23,7 @@ class SKSerial:
         self.device: str = device
         self.serial: typ.Optional[serial.Serial] = None
         self.debug = debug
+        self.open()
 
     def __del__(self) -> None:
         """デストラクタ."""
