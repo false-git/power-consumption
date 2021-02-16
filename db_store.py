@@ -32,7 +32,7 @@ class DBStore:
         self.cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     def close(self) -> None:
-        """DB接続をopenする."""
+        """DB接続をcloseする."""
         if self.cursor is not None:
             self.cursor.close()
             self.cursor = None

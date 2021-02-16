@@ -66,6 +66,9 @@ class PowerConsumption:
         if not self.temp_flag and not self.connected:
             sys.exit(1)
 
+        if not self.connected:
+            self.sk.close()
+
         self.task()
 
     def scan(self) -> bool:

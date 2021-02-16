@@ -20,9 +20,24 @@ class SKSerial:
             device: SKモジュールのデバイスファイル名
             debug: デバッグフラグ
         """
-        self.device = device
-        self.serial = serial.Serial(device, BAUDRATE)
+        self.device: str = device
+        self.serial: typ.Optional[serial.Serial]
         self.debug = debug
+
+    def __del__(self) -> None:
+        """デストラクタ."""
+        self.close()
+
+    def open(self) -> None:
+        """シリアル接続をopenする."""
+        self.close()
+        self.serial = serial.Serial(self.device, BAUDRATE)
+
+    def close(self) -> None:
+        """シリアル接続をcloseする."""
+        if self.serial is not None:
+            self.serial.close()
+            self.serial = None
 
     def debug_print(self, text: str) -> None:
         """デバッグプリント.
@@ -40,6 +55,7 @@ class SKSerial:
         Returns:
             1行分のテキスト
         """
+        assert self.serial is not None
         return self.serial.readline().decode("utf-8")
 
     def readresponse(self, cond: str = re_OK) -> typ.Tuple[bool, typ.List[str]]:
@@ -73,6 +89,7 @@ class SKSerial:
             line: 1行分のテキスト
             bin: バイナリデータ
         """
+        assert self.serial is not None
         if self.debug:
             if bin is None:
                 self.debug_print(f"SEND [{line}]")
