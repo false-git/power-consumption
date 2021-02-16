@@ -3,6 +3,7 @@
 import argparse
 import configparser
 import datetime
+import os
 import typing as typ
 import bokeh.models as bm
 import bokeh.plotting as bp
@@ -70,7 +71,10 @@ def main() -> None:
         end_time = datetime.datetime.fromisoformat(args.end)
     output_file: str = f"temp_{start_time.date()}.html"
     if args.output:
-        output_file = args.output
+        if os.path.isdir(args.output):
+            output_file = os.path.join(args.output, output_file)
+        else:
+            output_file = args.output
 
     inifile: configparser.ConfigParser = configparser.ConfigParser()
     inifile.read("power_consumption.ini", "utf-8")
