@@ -21,7 +21,7 @@ class SKSerial:
             debug: デバッグフラグ
         """
         self.device: str = device
-        self.serial: typ.Optional[serial.Serial]
+        self.serial: typ.Optional[serial.Serial] = None
         self.debug = debug
 
     def __del__(self) -> None:
