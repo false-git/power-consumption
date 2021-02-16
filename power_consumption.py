@@ -27,12 +27,16 @@ class PowerConsumption:
 
         self.sk: skcommand.SKSerial = skcommand.SKSerial(device, debug)
 
+        self.connected: bool = False
+        self.temp_flag: bool = False
+
     def main(self) -> None:
         """メイン処理."""
         parser: argparse.ArgumentParser = argparse.ArgumentParser()
         parser.add_argument("-i", "--info", action="store_true", help="send SKINFO command")
         parser.add_argument("-r", "--reg", help="send SKREG command with register S<REG>")
         parser.add_argument("-v", "--value", help="SKREG command with VALUE")
+        parser.add_argument("-t", "--temp", action="store_true", help="log Raspberry pi temp")
 
         args: argparse.Namespace = parser.parse_args()
 
@@ -47,14 +51,19 @@ class PowerConsumption:
             print(self.sk.sksreg(reg, args.value))
             sys.exit(0)
 
+        self.temp_flag = args.temp
+
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
-            sys.exit(1)
-
-        if not self.scan():
-            sys.exit(1)
-        if not self.join():
+        elif not self.scan():
+            pass
+        elif not self.join():
             # TODO: リトライとかをどうするか要検討
+            pass
+        else:
+            self.connected = True
+
+        if not self.temp_flag and not self.connected:
             sys.exit(1)
 
         self.task()
@@ -155,13 +164,25 @@ class PowerConsumption:
 
         return True
 
+    def log_temp(self) -> None:
+        """温度を記録する."""
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp: int = int(f.readline())
+
+        store: db_store.DBStore = db_store.DBStore(self.db_url)
+        store.temp_log(temp)
+        del store
+
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
         while True:
             timestamp: int = int(time.time()) // interval
-            if not self.get_prop():
-                break
+            if self.connected:
+                if not self.get_prop():
+                    break
+            if self.temp_flag:
+                self.log_temp()
             now: float = time.time()
             now_t: int = int(now) // interval
             if timestamp == now_t:

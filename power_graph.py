@@ -52,12 +52,13 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
     datadict: typ.Dict = {}
     for col in cols:
         datadict[col] = []
+    has_data: bool = len(data) > 0
     for row in data:
         datadict["time"].append(row["created_at"])
         datadict["電力量"].append(calc_電力量(row))
         datadict["電力"].append(row["瞬時電力"])
-        datadict["電流R"].append(row["瞬時電流_r"] / 10.)
-        datadict["電流T"].append(row["瞬時電流_t"] / 10.)
+        datadict["電流R"].append(row["瞬時電流_r"] / 10.0)
+        datadict["電流T"].append(row["瞬時電流_t"] / 10.0)
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
@@ -78,10 +79,10 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
         sizing_mode="stretch_both",
     )
     fig.add_tools(hover_tool)
-    fig.y_range = bm.Range1d(0, max(datadict["電力量"]))
-    fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]))
+    fig.y_range = bm.Range1d(0, max(datadict["電力量"]) if has_data else 0)
+    fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]) if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="W", axis_label="電力[W]"), "left")
-    fig.extra_y_ranges["A"] = bm.Range1d(0, max(datadict["電流R"]))
+    fig.extra_y_ranges["A"] = bm.Range1d(0, max(datadict["電流R"]) if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="A", axis_label="電流[A]"), "right")
 
     fig.line("time", "電力量", legend_label="積算電力量", line_color="red", source=source)
@@ -111,7 +112,7 @@ def main() -> None:
     end_time: datetime.datetime = start_time + datetime.timedelta(days=1)
     if args.end:
         end_time = datetime.datetime.fromisoformat(args.end)
-    output_file: str = f"{start_time.date()}.html"
+    output_file: str = f"power_{start_time.date()}.html"
     if args.output:
         output_file = args.output
 

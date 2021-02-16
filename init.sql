@@ -20,3 +20,9 @@ create table power_log (
     瞬時電流_T int, -- 瞬時電流計測値(T相)
     created_at timestamp not null default current_timestamp
 );
+drop table temp_log;
+create table temp_log (
+    id serial primary key,
+    temp int,
+    created_at timestamp not null default current_timestamp
+);

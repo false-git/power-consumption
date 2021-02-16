@@ -82,6 +82,15 @@ class DBStore:
         )
         self.connection.commit()
 
+    def temp_log(self, temp: int) -> None:
+        """温度を登録する.
+
+        Args:
+            temp: 温度
+        """
+        self.cursor.execute("insert into temp_log (temp) values (%s)", (temp,))
+        self.connection.commit()
+
     def select_scan_log(
         self, start_time: datetime.datetime, end_time: datetime.datetime
     ) -> typ.List[psycopg2.extras.DictRow]:
@@ -114,6 +123,24 @@ class DBStore:
         """
         self.cursor.execute(
             "select * from power_log where created_at >= %s and created_at < %s order by created_at",
+            (start_time, end_time),
+        )
+        return self.cursor.fetchall()
+
+    def select_temp_log(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> typ.List[psycopg2.extras.DictRow]:
+        """temp_logからデータ取得.
+
+        Args:
+            start_time: 取得範囲の最初(start_timeを含む)
+            end_time: 取得範囲の最初(end_timeを含まない)
+
+        Returns:
+            データ
+        """
+        self.cursor.execute(
+            "select * from temp_log where created_at >= %s and created_at < %s order by created_at",
             (start_time, end_time),
         )
         return self.cursor.fetchall()
