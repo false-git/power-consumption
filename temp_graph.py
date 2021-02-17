@@ -41,6 +41,8 @@ def make_temp_graph(output_file: str, data: typ.List) -> None:
         sizing_mode="stretch_both",
     )
     fig.add_tools(hover_tool)
+    fmt: typ.List[str] = ["%H:%M"]
+    fig.xaxis.formatter = bm.DatetimeTickFormatter(hours=fmt, hourmin=fmt, minutes=fmt)
     if len(data) > 0:
         ymax: int = int(max(datadict["temp"]) + 10)
         fig.y_range = bm.Range1d(0, ymax)
@@ -58,6 +60,7 @@ def main() -> None:
     parser.add_argument("-o", "--output", help="output filename")
     parser.add_argument("-s", "--start", help="start time")
     parser.add_argument("-e", "--end", help="end time")
+    parser.add_argument("-d", "--days", type=int, help="before n days")
 
     args: argparse.Namespace = parser.parse_args()
 
@@ -69,6 +72,9 @@ def main() -> None:
     end_time: datetime.datetime = start_time + datetime.timedelta(days=1)
     if args.end:
         end_time = datetime.datetime.fromisoformat(args.end)
+    if args.days:
+        end_time = datetime.datetime.now()
+        start_time = end_time - datetime.timedelta(args.days)
     output_file: str = f"temp_{start_time.date()}.html"
     if args.output:
         if os.path.isdir(args.output):

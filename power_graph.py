@@ -80,6 +80,8 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
         sizing_mode="stretch_both",
     )
     fig.add_tools(hover_tool)
+    fmt: typ.List[str] = ["%H:%M"]
+    fig.xaxis.formatter = bm.DatetimeTickFormatter(hours=fmt, hourmin=fmt, minutes=fmt)
     fig.y_range = bm.Range1d(0, max(datadict["電力量"]) if has_data else 0)
     fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]) if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="W", axis_label="電力[W]"), "left")
@@ -102,6 +104,7 @@ def main() -> None:
     parser.add_argument("-o", "--output", help="output filename")
     parser.add_argument("-s", "--start", help="start time")
     parser.add_argument("-e", "--end", help="end time")
+    parser.add_argument("-d", "--days", type=int, help="before n days")
 
     args: argparse.Namespace = parser.parse_args()
 
@@ -113,6 +116,9 @@ def main() -> None:
     end_time: datetime.datetime = start_time + datetime.timedelta(days=1)
     if args.end:
         end_time = datetime.datetime.fromisoformat(args.end)
+    if args.days:
+        end_time = datetime.datetime.now()
+        start_time = end_time - datetime.timedelta(args.days)
     output_file: str = f"power_{start_time.date()}.html"
     if args.output:
         if os.path.isdir(args.output):

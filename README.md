@@ -4,7 +4,7 @@
 
 ## 使い方
 
-* python 3.9以上と、poetry が使える状態にします。
+* python 3.7 以上と、poetry が使える状態にします。
 * postgresql に専用のデータベースを作成します。
 * power_consumption.ini-sample を power_consumption.ini にコピーし、必要な項目を設定します。
 * スマートメーターから情報を取得する側
