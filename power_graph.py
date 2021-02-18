@@ -64,10 +64,10 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
     source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
         ("time", "@time{%F %T}"),
-        ("積算電力量", "@{電力量}"),
-        ("瞬時電力", "@{電力}"),
-        ("瞬時電流(R相)", "@{電流R}"),
-        ("瞬時電流(T相)", "@{電流T}"),
+        ("積算電力量", "@{電力量}{0,0.0}"),
+        ("瞬時電力", "@{電力}{0,0}"),
+        ("瞬時電流(R相)", "@{電流R}{0,0.0}"),
+        ("瞬時電流(T相)", "@{電流T}{0,0.0}"),
     ]
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
 
@@ -82,10 +82,14 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
     fig.add_tools(hover_tool)
     fmt: typ.List[str] = ["%H:%M"]
     fig.xaxis.formatter = bm.DatetimeTickFormatter(hours=fmt, hourmin=fmt, minutes=fmt)
-    fig.y_range = bm.Range1d(0, max(datadict["電力量"]) if has_data else 0)
-    fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]) if has_data else 0)
+    if has_data:
+        電力量_min: float = min(datadict["電力量"])
+        電力量_max: float = max(datadict["電力量"])
+        電力量_5p: float = (電力量_max - 電力量_min) * 0.05
+        fig.y_range = bm.Range1d(電力量_min - 電力量_5p, 電力量_max + 電力量_5p)
+    fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]) * 1.05 if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="W", axis_label="電力[W]"), "left")
-    fig.extra_y_ranges["A"] = bm.Range1d(0, max(datadict["電流R"]) if has_data else 0)
+    fig.extra_y_ranges["A"] = bm.Range1d(0, max(*datadict["電流R"], *datadict["電流T"]) * 1.05 if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="A", axis_label="電流[A]"), "right")
 
     fig.line("time", "電力量", legend_label="積算電力量", line_color="red", source=source)
@@ -94,6 +98,7 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
     fig.line("time", "電流T", y_range_name="A", legend_label="瞬時電流(T相)", line_color="green", source=source)
 
     fig.legend.click_policy = "hide"
+    fig.legend.location = "top_left"
 
     bp.save(fig)
 
