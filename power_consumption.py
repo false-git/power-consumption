@@ -93,7 +93,7 @@ class PowerConsumption:
         del store
 
         ipv6addr: str = self.sk.skll64(addr)
-        if re.match(r"([0-9A-F]{4}:){7}[0-9A-F]{4}", ipv6addr):
+        if not re.match(r"([0-9A-F]{4}:){7}[0-9A-F]{4}", ipv6addr):
             print(f"スマートメーターのIPv6アドレスの取得に失敗しました。 [{ipv6addr}]")
             return False
         # 接続パラメータをselfに保存する。

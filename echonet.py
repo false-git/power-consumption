@@ -175,7 +175,7 @@ class ECHONETLiteFrame:
 
         ehd, tid, seoj_c, seoj_i, deoj_c, deoj_i, esv, opc = struct.unpack_from("!HHHBHBBB", b)
         offset: int = 12
-        if opc > 0:
+        for i in range(opc):
             p: EProperty
             p, offset = EProperty.from_bytes(b, offset)
             properties.append(p)
