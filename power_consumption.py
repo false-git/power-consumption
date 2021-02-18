@@ -195,7 +195,7 @@ class PowerConsumption:
                     line = line.replace("\r\n", "")
                     self.sk.debug_print(f"DROP [{line}]")
                     now = time.time()
-            else:
+            elif now < next_time:
                 time.sleep(next_time - now)
 
 
