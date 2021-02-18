@@ -37,6 +37,7 @@ class SKSerial:
         self.serial: typ.Optional[serial.Serial] = None
         self.debug: bool = debug
         self.ip: str = ""
+        self.tid: int = 0
         self.open()
 
     def __del__(self) -> None:
@@ -259,7 +260,8 @@ class SKSerial:
         Returns:
             読み出したプロパティ値。失敗したらNone
         """
-        frame: echonet.ECHONETLiteFrame = echonet.ECHONETLiteFrame()
+        self.tid = (self.tid + 1) & 0xFFFF
+        frame: echonet.ECHONETLiteFrame = echonet.ECHONETLiteFrame(tid=self.tid)
         for epc in epc_list:
             frame.add_property(echonet.EProperty(epc))
         bin: bytes = frame.to_bytes()
@@ -280,7 +282,7 @@ class SKSerial:
                             if (
                                 token[2] == self.ip
                                 and token[4] == f"{PORT_ECHONETLite}"
-                                and echonet.check_get_res(token[-1])
+                                and echonet.check_get_res(token[-1], self.tid)
                             ):
                                 frame = echonet.ECHONETLiteFrame.from_hex(token[-1])
                                 return frame.properties

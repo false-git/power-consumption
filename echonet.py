@@ -21,11 +21,12 @@ EPC_瞬時電力計測値: int = 0xE7
 EPC_瞬時電流計測値: int = 0xE8
 
 
-def check_get_res(telegram: str) -> bool:
+def check_get_res(telegram: str, tid: int) -> bool:
     """スマートメーターからコントローラ宛のプロパティ読みだし応答電文かを調べる.
 
     Args:
         telegram: UDPで受信した電文
+        tid: トランザクションID
 
     Return:
         欲しい電文のときTrue
@@ -38,7 +39,8 @@ def check_get_res(telegram: str) -> bool:
 
     if r_frame.ehd != d_frame.ehd:
         return False
-    # TIDのチェックは省略。本来は、ESV_Get を呼ぶときにincrementしつつ覚えておいて、ここでチェックすべき。
+    if r_frame.tid != tid:
+        return False
     if r_frame.seoj_c != d_frame.deoj_c or r_frame.seoj_i != d_frame.deoj_i:
         return False
     if r_frame.deoj_c != d_frame.seoj_c or r_frame.deoj_i != d_frame.seoj_i:
