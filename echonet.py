@@ -69,7 +69,7 @@ class EProperty:
         Returns:
             16進文字列表記
         """
-        return self.to_bytes().hex()
+        return self.to_bytes().hex().upper()
 
     @classmethod
     def from_bytes(cls, b: bytes, offset: int = 0) -> typ.Tuple["EProperty", int]:
@@ -151,7 +151,7 @@ class ECHONETLiteFrame:
         Returns:
             16進文字列表記
         """
-        return self.to_bytes().hex()
+        return self.to_bytes().hex().upper()
 
     @classmethod
     def from_bytes(cls, b: bytes) -> "ECHONETLiteFrame":
