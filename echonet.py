@@ -7,16 +7,45 @@ import typing as typ
 # 定数定義
 EHD1: int = 0x10  # プロトコル種別: ECHONET Lite規格
 EHD2: int = 0x81  # 形式1
+EOJ_PROFILE: int = 0x0EF0  # プロファイルクラスグループ/ノードプロファイル
 EOJ_CONTROLLER: int = 0x05FF  # 管理・操作関連機器クラスグループ/コントローラ
 EOJ_SMARTMETER: int = 0x0288  # 住宅・設備関連機器クラスグループ/低圧スマート電力量メータ
 ESV_SetI: int = 0x60  # プロパティ値書き込み要求（応答不要）
 ESV_Get: int = 0x62  # プロパティ値読み出し要求
 ESV_Get_Res: int = 0x72  # プロパティ値読み出し応答
+ESV_INF: int = 0x73  # プロパティ値通知
 EPC_係数: int = 0xD3
 EPC_積算電力量計測値: int = 0xE0
 EPC_積算電力量単位: int = 0xE1
 EPC_瞬時電力計測値: int = 0xE7
 EPC_瞬時電流計測値: int = 0xE8
+
+
+def check_get_res(telegram: str) -> bool:
+    """スマートメーターからコントローラ宛のプロパティ読みだし応答電文かを調べる.
+
+    Args:
+        telegram: UDPで受信した電文
+
+    Return:
+        欲しい電文のときTrue
+    """
+    d_frame: ECHONETLiteFrame = ECHONETLiteFrame()
+    try:
+        r_frame: ECHONETLiteFrame = ECHONETLiteFrame.from_hex(telegram)
+    except Exception:
+        return False
+
+    if r_frame.ehd != d_frame.ehd:
+        return False
+    # TIDのチェックは省略。本来は、ESV_Get を呼ぶときにincrementしつつ覚えておいて、ここでチェックすべき。
+    if r_frame.seoj_c != d_frame.deoj_c or r_frame.seoj_i != d_frame.deoj_i:
+        return False
+    if r_frame.deoj_c != d_frame.seoj_c or r_frame.deoj_i != d_frame.seoj_i:
+        return False
+    if r_frame.esv != ESV_Get_Res:
+        return False
+    return True
 
 
 @dataclasses.dataclass

@@ -9,6 +9,19 @@ import echonet
 BAUDRATE = 115200
 re_OK: str = r"\s*OK\s*"
 
+PORT_ECHONETLite: str = "0E1A"  # ECHONETLite UDP Port
+PORT_PANA: str = "02CC"  # PANA UDP Port
+IPv6_ALL: str = "FF02:0000:0000:0000:0000:0000:0000:0001"  # All nodes in the リンクローカル
+TIMEOUT_MARK: str = "--TIMEOUT--"  # readlineのTIMEOUTマーク
+UDP_TIMEOUT: int = 5  # UDP受信のタイムアウト[秒]
+"""
+ER04: 指定されたコマンドがサポートされていない
+ER05: 指定されたコマンドの引数の数が正しくない
+ER06: 指定されたコマンドの引数形式や値域が正しくない
+ER09: UART 入力エラーが発生した
+ER10: 指定されたコマンドは受付けたが、実行結果が失敗した
+"""
+
 
 class SKSerial:
     """SKモジュールとやり取りするシリアル."""
@@ -22,7 +35,8 @@ class SKSerial:
         """
         self.device: str = device
         self.serial: typ.Optional[serial.Serial] = None
-        self.debug = debug
+        self.debug: bool = debug
+        self.ip: str = ""
         self.open()
 
     def __del__(self) -> None:
@@ -50,26 +64,34 @@ class SKSerial:
             now: datetime.datetime = datetime.datetime.now()
             print(f"{now} {text}")
 
-    def readline(self) -> str:
+    def readline(self, timeout: typ.Optional[float]) -> str:
         """テキストを1行読み込む.
 
         Returns:
             1行分のテキスト
+            timeout: timeout
         """
         assert self.serial is not None
+        self.serial.timeout = timeout
         return self.serial.readline().decode("utf-8")
 
-    def readresponse(self, cond: str = re_OK) -> typ.Tuple[bool, typ.List[str]]:
+    def readresponse(self, cond: str = re_OK, timeout: typ.Optional[float] = None) -> typ.Tuple[bool, typ.List[str]]:
         """応答を読み込む.
 
         Returns:
             success: 終了条件を満たしたらTrue
             response: 読み込んだ行のリスト
+            timeout: timeout
         """
         success: bool = False
         response: typ.List[str] = []
         while True:
-            line: str = self.readline().replace("\r\n", "")
+            line: str = self.readline(timeout)
+            if len(line) == 0 or not line.endswith("\n"):
+                self.debug_print(f"RECEIVE [{line}] TIMEOUT")
+                response.append(TIMEOUT_MARK)
+                break
+            line = line.replace("\r\n", "")
             self.debug_print(f"RECEIVE [{line}]")
             if line.startswith("SK"):
                 # エコーバックと判断して無視
@@ -189,6 +211,10 @@ class SKSerial:
                     if line.startswith("  "):
                         parts: typ.List[str] = line.strip().split(":")
                         result[parts[0]] = parts[1]
+                    elif line.startswith("EVENT 22"):
+                        parts = line.strip().split()
+                        if len(parts) == 3:
+                            self.ip = parts[-1]
                 if "Channel" in result and "Pan ID" in result and "Addr" in result:
                     break
                 result = {}
@@ -237,12 +263,26 @@ class SKSerial:
         for epc in epc_list:
             frame.add_property(echonet.EProperty(epc))
         bin: bytes = frame.to_bytes()
-        self.writeline(f"SKSENDTO 1 {ipv6addr} 0E1A 1 {len(bin):04X} ", bin)
-        success, response = self.readresponse(r"ERXUDP.*")
-        if success:
-            for line in response:
-                if line.startswith("ERXUDP"):
-                    token: typ.List[str] = line.split()
-                    frame = echonet.ECHONETLiteFrame.from_hex(token[-1])
-                    return frame.properties
+        success: bool = False
+        response: typ.List[str] = [TIMEOUT_MARK]
+        while True:
+            if len(response) > 0 and response[-1] == TIMEOUT_MARK:
+                self.writeline(f"SKSENDTO 1 {ipv6addr} {PORT_ECHONETLite} 1 {len(bin):04X} ", bin)
+                # TODO: リトライアウトの判定
+            # 細かいことを言えばUDP送信の後、EVENT 21が来て、その後ERXUDPを待つことになるが、送信が失敗たらFAILが来ると想定。
+            # FAILの場合にリトライするかは悩みどころ。
+            success, response = self.readresponse(r"ERXUDP.*", UDP_TIMEOUT)
+            if success:
+                for line in response:
+                    if line.startswith("ERXUDP"):
+                        token: typ.List[str] = line.split()
+                        if len(token) == 9:
+                            if (
+                                token[2] == self.ip
+                                and token[4] == f"{PORT_ECHONETLite}"
+                                and echonet.check_get_res(token[-1])
+                            ):
+                                frame = echonet.ECHONETLiteFrame.from_hex(token[-1])
+                                return frame.properties
+                        self.debug_print("telegram not for me.")
         return None
