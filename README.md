@@ -11,9 +11,11 @@
   * `poetry install --no-dev -E poller` で実行環境を整えます。
   * ※ macOSだと numpy 1.20 がインストールできなかったので、numpyのバージョンを 1.19 未満に制限しています。mac以外の場合は、pyproject.toml から numpy の行を削除できます。
   * `poetry run python power_consumption.py` でデータを収集して DB に格納します。
+  * `poetry run python power_consumption.py -t` でCPU温度データも収集するようになります。(Raspberry pi専用)
 * 収集したデータからグラフを作る側
   * `poetry install --no-dev -E graph` で実行環境を整えます。(macOSの場合は、numpy 1.20 のインストールでエラーになるので、`-E graph_macOS` を使用します)
-  * `poetry run python power_graph.py` で当日分のグラフを生成します。
+  * `poetry run python power_graph.py` で当日分の電力消費量グラフを生成します。
+  * `poetry run python temp_graph.py` で当日分の温度グラフを生成します。
 * それぞれ、-h をつけて実行するとヘルプが出ます。
 
 ## 参考
@@ -50,6 +52,7 @@
   * 0x62: プロパティ値読み出し要求 Get
   * 0x71: プロパティ値書き込み応答 Set_Res
   * 0x72: プロパティ値読み出し応答 Get_Res
+  * 0x73: プロパティ値通知 INF (30分に一回勝手に送ってくる)
 * OPC(1B): プロパティ数
 * EPC(1B): ECHONET プロパティ
   * オブジェクト毎に異なる。スマートメータは、AppendixHのp.312
@@ -68,6 +71,12 @@
 * 応答があるコマンドは、応答の後に `OK`が返る。
   * SKINFO → EINFO
   * SKSREG(読み出し) → ESREG
+* FAILのエラーコード
+  * ER04: 指定されたコマンドがサポートされていない
+  * ER05: 指定されたコマンドの引数の数が正しくない
+  * ER06: 指定されたコマンドの引数形式や値域が正しくない
+  * ER09: UART 入力エラーが発生した
+  * ER10: 指定されたコマンドは受付けたが、実行結果が失敗した
 * コマンドの応答以外に、非同期に(?)イベントが発生するらしい
   * ERXUDP
   * ERXTCP

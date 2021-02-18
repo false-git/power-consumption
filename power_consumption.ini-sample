@@ -4,6 +4,8 @@
 # win: COMx (xは数字)
 # linux: /dev/ttyUSBx (xは数字)
 device = /dev/tty.usbserial-XXXXXXXX
+# UDP受信タイムアウト(秒)
+timeout = 5
 # デバッグフラグ
 debug = True
 # Bルートの認証ID

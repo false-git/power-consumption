@@ -13,28 +13,22 @@ PORT_ECHONETLite: str = "0E1A"  # ECHONETLite UDP Port
 PORT_PANA: str = "02CC"  # PANA UDP Port
 IPv6_ALL: str = "FF02:0000:0000:0000:0000:0000:0000:0001"  # All nodes in the リンクローカル
 TIMEOUT_MARK: str = "--TIMEOUT--"  # readlineのTIMEOUTマーク
-UDP_TIMEOUT: int = 5  # UDP受信のタイムアウト[秒]
-"""
-ER04: 指定されたコマンドがサポートされていない
-ER05: 指定されたコマンドの引数の数が正しくない
-ER06: 指定されたコマンドの引数形式や値域が正しくない
-ER09: UART 入力エラーが発生した
-ER10: 指定されたコマンドは受付けたが、実行結果が失敗した
-"""
 
 
 class SKSerial:
     """SKモジュールとやり取りするシリアル."""
 
-    def __init__(self, device: str, debug: bool) -> None:
+    def __init__(self, device: str, timeout: float, debug: bool) -> None:
         """初期化.
 
         Args:
             device: SKモジュールのデバイスファイル名
+            timeout: UDP受信タイムアウト
             debug: デバッグフラグ
         """
         self.device: str = device
         self.serial: typ.Optional[serial.Serial] = None
+        self.timeout: float = 0
         self.debug: bool = debug
         self.ip: str = ""
         self.tid: int = 0
@@ -273,7 +267,7 @@ class SKSerial:
                 # TODO: リトライアウトの判定
             # 細かいことを言えばUDP送信の後、EVENT 21が来て、その後ERXUDPを待つことになるが、送信が失敗たらFAILが来ると想定。
             # FAILの場合にリトライするかは悩みどころ。
-            success, response = self.readresponse(r"ERXUDP.*", UDP_TIMEOUT)
+            success, response = self.readresponse(r"ERXUDP.*", self.timeout)
             if success:
                 for line in response:
                     if line.startswith("ERXUDP"):

@@ -20,12 +20,13 @@ class PowerConsumption:
         inifile: configparser.ConfigParser = configparser.ConfigParser()
         inifile.read("power_consumption.ini", "utf-8")
         device: str = inifile.get("routeB", "device")
+        timeout: float = inifile.getfloat("routeB", "timeout", fallback=5)
         debug: bool = inifile.getboolean("routeB", "debug", fallback=False)
         self.routeB_id: str = inifile.get("routeB", "id")
         self.routeB_password: str = inifile.get("routeB", "password")
         self.db_url: str = inifile.get("routeB", "db_url")
 
-        self.sk: skcommand.SKSerial = skcommand.SKSerial(device, debug)
+        self.sk: skcommand.SKSerial = skcommand.SKSerial(device, timeout, debug)
 
         self.connected: bool = False
         self.temp_flag: bool = False
