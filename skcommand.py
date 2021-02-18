@@ -62,7 +62,7 @@ class SKSerial:
         """
         if self.debug:
             now: datetime.datetime = datetime.datetime.now()
-            print(f"{now} {text}")
+            print(f"{now} {text}", flush=True)
 
     def readline(self, timeout: typ.Optional[float]) -> str:
         """テキストを1行読み込む.
