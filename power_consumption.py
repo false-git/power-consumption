@@ -181,11 +181,11 @@ class PowerConsumption:
         interval: int = 60
         while True:
             next_time: int = (int(time.time()) // interval + 1) * interval
+            if self.temp_flag:
+                self.log_temp()
             if self.connected:
                 if not self.get_prop():
                     break
-            if self.temp_flag:
-                self.log_temp()
             now: float = time.time()
             if self.connected:
                 while now < next_time:
