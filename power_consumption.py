@@ -180,16 +180,23 @@ class PowerConsumption:
         """1分間隔で繰り返し実行."""
         interval: int = 60
         while True:
-            timestamp: int = int(time.time()) // interval
+            next_time: int = (int(time.time()) // interval + 1) * interval
             if self.connected:
                 if not self.get_prop():
                     break
             if self.temp_flag:
                 self.log_temp()
             now: float = time.time()
-            now_t: int = int(now) // interval
-            if timestamp == now_t:
-                time.sleep((now_t + 1) * interval - now)
+            if self.connected:
+                while now < next_time:
+                    line: str = self.sk.readline(next_time - now)
+                    if len(line) == 0 or not line.endswith("\n"):
+                        break
+                    line = line.replace("\r\n", "")
+                    self.sk.debug_print(f"DROP [{line}]")
+                    now = time.time()
+            else:
+                time.sleep(next_time - now)
 
 
 if __name__ == "__main__":
