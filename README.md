@@ -6,6 +6,7 @@
 
 * python 3.7 以上と、poetry が使える状態にします。
 * postgresql に専用のデータベースを作成します。
+  * psql で DB に接続し、`\i init.sql` でテーブルを作成します。
 * power_consumption.ini-sample を power_consumption.ini にコピーし、必要な項目を設定します。
 * スマートメーターから情報を取得する側
   * `poetry install --no-dev -E poller` で実行環境を整えます。
