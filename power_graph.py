@@ -4,6 +4,7 @@ import argparse
 import configparser
 import datetime
 import os
+import statistics
 import typing as typ
 import bokeh.models as bm
 import bokeh.plotting as bp
@@ -42,14 +43,15 @@ def calc_電力量(row) -> float:
     return 係数 * 積算電力量 * 単位補正値
 
 
-def make_power_graph(output_file: str, data: typ.List) -> None:
+def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
     """グラフ作成.
 
     Args:
         output_file: 出力ファイル名
         data: データ
+        window: 移動平均のサンプル数
     """
-    cols: typ.Tuple = ("time", "電力量", "電力", "電流R", "電流T")
+    cols: typ.Tuple = ("time", "電力量", "電力", "電流R", "電流T", "MA電力", "MA電流R", "MA電流T")
     datadict: typ.Dict = {}
     for col in cols:
         datadict[col] = []
@@ -60,6 +62,9 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
         datadict["電力"].append(row["瞬時電力"])
         datadict["電流R"].append(row["瞬時電流_r"] / 10.0)
         datadict["電流T"].append(row["瞬時電流_t"] / 10.0)
+        datadict["MA電力"].append(statistics.mean(datadict["電力"][-window:]))
+        datadict["MA電流T"].append(statistics.mean(datadict["電流T"][-window:]))
+        datadict["MA電流R"].append(statistics.mean(datadict["電流R"][-window:]))
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
@@ -93,9 +98,40 @@ def make_power_graph(output_file: str, data: typ.List) -> None:
     fig.add_layout(bm.LinearAxis(y_range_name="A", axis_label="電流[A]"), "right")
 
     fig.line("time", "電力量", legend_label="積算電力量", line_color="red", source=source)
-    fig.line("time", "電力", y_range_name="W", legend_label="瞬時電力", line_color="orange", source=source)
-    fig.line("time", "電流R", y_range_name="A", legend_label="瞬時電流(R相)", line_color="blue", source=source)
-    fig.line("time", "電流T", y_range_name="A", legend_label="瞬時電流(T相)", line_color="green", source=source)
+
+    raw_data: typ.List = [
+        ("電力", "W", "瞬時電力", "orange"),
+        ("電流R", "A", "瞬時電流(R相)", "blue"),
+        ("電流T", "A", "瞬時電流(T相)", "green"),
+    ]
+    for col, range_name, legend_label, color in raw_data:
+        fig.line(
+            "time",
+            col,
+            y_range_name=range_name,
+            legend_label=legend_label,
+            line_color=color,
+            line_alpha=0.8,
+            source=source,
+        ).visible = False
+
+    ma_data: typ.List = [
+        ("MA電力", "W", "瞬時電力(移動平均)", "orange"),
+        ("MA電流R", "A", "瞬時電流(R相)(移動平均)", "blue"),
+        ("MA電流T", "A", "瞬時電流(T相)(移動平均)", "green"),
+    ]
+    for col, range_name, legend_label, color in ma_data:
+        fig.line(
+            "time",
+            col,
+            y_range_name=range_name,
+            legend_label=legend_label,
+            line_color=color,
+            line_width=2,
+            line_alpha=0.8,
+            line_dash="dotted",
+            source=source,
+        )
 
     fig.legend.click_policy = "hide"
     fig.legend.location = "top_left"
@@ -110,6 +146,7 @@ def main() -> None:
     parser.add_argument("-s", "--start", help="start time")
     parser.add_argument("-e", "--end", help="end time")
     parser.add_argument("-d", "--days", type=int, help="before n days")
+    parser.add_argument("-w", "--window", type=int, help="window size of moving average", default=30)
 
     args: argparse.Namespace = parser.parse_args()
 
@@ -138,7 +175,7 @@ def main() -> None:
     store: db_store.DBStore = db_store.DBStore(db_url)
     data: typ.List = store.select_power_log(start_time, end_time)
 
-    make_power_graph(output_file, data)
+    make_power_graph(output_file, data, args.window)
     print(output_file)
 
 
