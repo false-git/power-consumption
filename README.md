@@ -10,11 +10,10 @@
 * power_consumption.ini-sample を power_consumption.ini にコピーし、必要な項目を設定します。
 * スマートメーターから情報を取得する側
   * `poetry install --no-dev -E poller` で実行環境を整えます。
-  * ※ macOSだと numpy 1.20 がインストールできなかったので、numpyのバージョンを 1.19 未満に制限しています。mac以外の場合は、pyproject.toml から numpy の行を削除できます。
   * `poetry run python power_consumption.py` でデータを収集して DB に格納します。
   * `poetry run python power_consumption.py -t` でCPU温度データも収集するようになります。(Raspberry pi専用)
 * 収集したデータからグラフを作る側
-  * `poetry install --no-dev -E graph` で実行環境を整えます。(macOSの場合は、numpy 1.20 のインストールでエラーになるので、`-E graph_macOS` を使用します)
+  * `poetry install --no-dev -E graph` で実行環境を整えます。
   * `poetry run python power_graph.py` で当日分の電力消費量グラフを生成します。
   * `poetry run python temp_graph.py` で当日分の温度グラフを生成します。
 * それぞれ、-h をつけて実行するとヘルプが出ます。
