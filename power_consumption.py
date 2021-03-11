@@ -70,7 +70,10 @@ class PowerConsumption:
         if not self.connected:
             self.sk.close()
 
-        self.task()
+        try:
+            self.task()
+        except KeyboardInterrupt:
+            pass
 
         if self.connected:
             self.sk.close()
