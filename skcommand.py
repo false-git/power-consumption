@@ -28,7 +28,7 @@ class SKSerial:
         """
         self.device: str = device
         self.serial: typ.Optional[serial.Serial] = None
-        self.timeout: float = 0
+        self.timeout: float = timeout
         self.debug: bool = debug
         self.ip: str = ""
         self.tid: int = 0
@@ -262,17 +262,16 @@ class SKSerial:
         success: bool = False
         response: typ.List[str] = [TIMEOUT_MARK]
         timeout_count: int = -1
-        while True:
+        while timeout_count < 5:
             if len(response) > 0 and response[-1] == TIMEOUT_MARK:
                 self.writeline(f"SKSENDTO 1 {ipv6addr} {PORT_ECHONETLite} 1 {len(bin):04X} ", bin)
                 timeout_count += 1
-                if timeout_count > 5:
-                    return None
+            else:
+                timeout_count = 0
             # 細かいことを言えばUDP送信の後、EVENT 21が来て、その後ERXUDPを待つことになるが、送信が失敗たらFAILが来ると想定。
             # FAILの場合にリトライするかは悩みどころ。
             success, response = self.readresponse(r"ERXUDP.*", self.timeout)
             if success:
-                timeout_count = 0
                 for line in response:
                     if line.startswith("ERXUDP"):
                         token: typ.List[str] = line.split()
