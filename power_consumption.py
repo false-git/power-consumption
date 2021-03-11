@@ -72,6 +72,9 @@ class PowerConsumption:
 
         self.task()
 
+        if self.connected:
+            self.sk.close()
+
     def scan(self) -> bool:
         """SKSCANでスマートメーターを探し、接続パラメータを取得.
 
