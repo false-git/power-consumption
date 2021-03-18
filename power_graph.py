@@ -51,7 +51,7 @@ def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
         data: データ
         window: 移動平均のサンプル数
     """
-    cols: typ.Tuple = ("time", "電力量", "電力", "電流R", "電流T", "MA電力", "MA電流R", "MA電流T")
+    cols: typ.Tuple = ("time", "電力量", "電力", "電流R", "電流T", "電流", "MA電力", "MA電流R", "MA電流T", "MA電流")
     datadict: typ.Dict = {}
     for col in cols:
         datadict[col] = []
@@ -62,9 +62,11 @@ def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
         datadict["電力"].append(row["瞬時電力"])
         datadict["電流R"].append(row["瞬時電流_r"] / 10.0)
         datadict["電流T"].append(row["瞬時電流_t"] / 10.0)
+        datadict["電流"].append((row["瞬時電流_r"] + row["瞬時電流_t"]) / 10.0)
         datadict["MA電力"].append(statistics.mean(datadict["電力"][-window:]))
         datadict["MA電流T"].append(statistics.mean(datadict["電流T"][-window:]))
         datadict["MA電流R"].append(statistics.mean(datadict["電流R"][-window:]))
+        datadict["MA電流"].append(statistics.mean(datadict["電流"][-window:]))
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
@@ -73,6 +75,7 @@ def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
         ("瞬時電力", "@{電力}{0,0}"),
         ("瞬時電流(R相)", "@{電流R}{0,0.0}"),
         ("瞬時電流(T相)", "@{電流T}{0,0.0}"),
+        ("瞬時電流(合計)", "@{電流}{0,0.0}"),
     ]
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
 
@@ -94,7 +97,7 @@ def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
         fig.y_range = bm.Range1d(電力量_min - 電力量_5p, 電力量_max + 電力量_5p)
     fig.extra_y_ranges["W"] = bm.Range1d(0, max(datadict["電力"]) * 1.05 if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="W", axis_label="電力[W]"), "left")
-    fig.extra_y_ranges["A"] = bm.Range1d(0, max(*datadict["電流R"], *datadict["電流T"]) * 1.05 if has_data else 0)
+    fig.extra_y_ranges["A"] = bm.Range1d(0, max(datadict["電流"]) * 1.05 if has_data else 0)
     fig.add_layout(bm.LinearAxis(y_range_name="A", axis_label="電流[A]"), "right")
 
     fig.line("time", "電力量", legend_label="積算電力量", line_color="red", source=source)
@@ -103,6 +106,7 @@ def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
         ("電力", "W", "瞬時電力", "orange"),
         ("電流R", "A", "瞬時電流(R相)", "blue"),
         ("電流T", "A", "瞬時電流(T相)", "green"),
+        ("電流", "A", "瞬時電流(合計)", "black"),
     ]
     for col, range_name, legend_label, color in raw_data:
         fig.line(
@@ -119,6 +123,7 @@ def make_power_graph(output_file: str, data: typ.List, window: int) -> None:
         ("MA電力", "W", "瞬時電力(移動平均)", "orange"),
         ("MA電流R", "A", "瞬時電流(R相)(移動平均)", "blue"),
         ("MA電流T", "A", "瞬時電流(T相)(移動平均)", "green"),
+        ("MA電流", "A", "瞬時電流(合計)(移動平均)", "black"),
     ]
     for col, range_name, legend_label, color in ma_data:
         fig.line(
