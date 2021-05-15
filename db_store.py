@@ -91,6 +91,18 @@ class DBStore:
         self.cursor.execute("insert into temp_log (temp) values (%s)", (temp,))
         self.connection.commit()
 
+    def co2_log(self, co2: int, temp: int, pressure: int, ss: int) -> None:
+        """温度を登録する.
+
+        Args:
+            co2: 二酸化炭素濃度[ppm]
+            temp: 温度
+            pressure: 謎
+            ss: status
+        """
+        self.cursor.execute("insert into co2_log (co2, temp, pressure, ss) values (%s, %s, %s, %s)", (co2, temp, pressure, ss))
+        self.connection.commit()
+
     def select_scan_log(
         self, start_time: datetime.datetime, end_time: datetime.datetime
     ) -> typ.List[psycopg2.extras.DictRow]:
@@ -141,6 +153,24 @@ class DBStore:
         """
         self.cursor.execute(
             "select * from temp_log where created_at >= %s and created_at < %s order by created_at",
+            (start_time, end_time),
+        )
+        return self.cursor.fetchall()
+
+    def select_co2_log(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> typ.List[psycopg2.extras.DictRow]:
+        """co2_logからデータ取得.
+
+        Args:
+            start_time: 取得範囲の最初(start_timeを含む)
+            end_time: 取得範囲の最初(end_timeを含まない)
+
+        Returns:
+            データ
+        """
+        self.cursor.execute(
+            "select * from co2_log where created_at >= %s and created_at < %s order by created_at",
             (start_time, end_time),
         )
         return self.cursor.fetchall()

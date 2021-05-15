@@ -5,14 +5,16 @@ description = ""
 authors = ["false <false@wizard-limit.net>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.7.1"
 pyserial = {version = "^3.5", optional = true}
 psycopg2-binary = "^2.8.6"
 bokeh = {version = "^2.2.3", optional = true}
+mh-z19 = {version = "^3.0.2", optional = true}
+pandas = {version = "^1.2.4", optional = true}
 
 [tool.poetry.extras]
-poller = ["pyserial"]
-graph = ["bokeh"]
+poller = ["pyserial", "mh-z19"]
+graph = ["bokeh", "pandas"]
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

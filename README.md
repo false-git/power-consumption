@@ -4,7 +4,7 @@
 
 ## 使い方
 
-* python 3.7 以上と、poetry が使える状態にします。
+* python 3.7.1 以上と、poetry が使える状態にします。
 * postgresql に専用のデータベースを作成します。
   * psql で DB に接続し、`\i init.sql` でテーブルを作成します。
 * power_consumption.ini-sample を power_consumption.ini にコピーし、必要な項目を設定します。
@@ -12,6 +12,7 @@
   * `poetry install --no-dev -E poller` で実行環境を整えます。
   * `poetry run python power_consumption.py` でデータを収集して DB に格納します。
   * `poetry run python power_consumption.py -t` でCPU温度データも収集するようになります。(Raspberry pi専用)
+    * `-c` オプションを付けると、MH-Z19系のCO2センサーの値も収集します。
 * 収集したデータからグラフを作る側
   * `poetry install --no-dev -E graph` で実行環境を整えます。
   * `poetry run python power_graph.py` で当日分の電力消費量グラフを生成します。
