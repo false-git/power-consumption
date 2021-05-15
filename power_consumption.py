@@ -12,6 +12,7 @@ import echonet
 import skcommand
 import mh_z19
 
+
 class PowerConsumption:
     """スマートメーターから電力消費量を読むクラス."""
 
@@ -67,7 +68,7 @@ class PowerConsumption:
         else:
             self.connected = True
 
-        if not self.temp_flag and and self.co2_flag and not self.connected:
+        if not self.temp_flag and self.co2_flag and not self.connected:
             sys.exit(1)
 
         if not self.connected:
@@ -192,7 +193,6 @@ class PowerConsumption:
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
         del store
-
 
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
