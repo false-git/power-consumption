@@ -69,7 +69,8 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List) -
         fig.add_layout(bm.LinearAxis(y_range_name="ppm", axis_label="濃度[ppm]"), "right")
         fig.line("time", "co2", legend_label="CO₂", line_color="green", y_range_name="ppm", source=source)
 
-    # fig.legend.click_policy = "hide"
+    fig.legend.click_policy = "hide"
+    fig.legend.location = "top_left"
 
     bp.save(fig)
 
