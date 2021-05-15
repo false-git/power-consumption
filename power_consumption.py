@@ -10,7 +10,7 @@ import typing as typ
 import db_store
 import echonet
 import skcommand
-
+import mh_z19
 
 class PowerConsumption:
     """スマートメーターから電力消費量を読むクラス."""
@@ -30,6 +30,7 @@ class PowerConsumption:
 
         self.connected: bool = False
         self.temp_flag: bool = False
+        self.co2_flag: bool = False
 
     def main(self) -> None:
         """メイン処理."""
@@ -38,6 +39,7 @@ class PowerConsumption:
         parser.add_argument("-r", "--reg", help="send SKREG command with register S<REG>")
         parser.add_argument("-v", "--value", help="SKREG command with VALUE")
         parser.add_argument("-t", "--temp", action="store_true", help="log Raspberry pi temp")
+        parser.add_argument("-c", "--co2", action="store_true", help="log MH-Z19 CO2")
 
         args: argparse.Namespace = parser.parse_args()
 
@@ -53,6 +55,7 @@ class PowerConsumption:
             sys.exit(0)
 
         self.temp_flag = args.temp
+        self.co2_flag = args.co2
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
@@ -64,7 +67,7 @@ class PowerConsumption:
         else:
             self.connected = True
 
-        if not self.temp_flag and not self.connected:
+        if not self.temp_flag and and self.co2_flag and not self.connected:
             sys.exit(1)
 
         if not self.connected:
@@ -183,6 +186,14 @@ class PowerConsumption:
         store.temp_log(temp)
         del store
 
+    def log_co2(self) -> None:
+        """CO2を記録する."""
+        d: typ.Dict = mh_z19.read_all(serial_console_untouched=True)
+        store: db_store.DBStore = db_store.DBStore(self.db_url)
+        store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
+        del store
+
+
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
@@ -190,6 +201,8 @@ class PowerConsumption:
             next_time: int = (int(time.time()) // interval + 1) * interval
             if self.temp_flag:
                 self.log_temp()
+            if self.co2_flag:
+                self.log_co2()
             if self.connected:
                 if not self.get_prop():
                     break

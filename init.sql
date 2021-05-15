@@ -26,3 +26,12 @@ create table temp_log (
     temp int,
     created_at timestamp not null default current_timestamp
 );
+drop table co2_log;
+create table co2_log (
+    id serial primary key,
+    co2 int,
+    temp int,
+    pressure int,
+    ss int,
+    created_at timestamp not null default current_timestamp
+);
