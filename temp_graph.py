@@ -1,5 +1,4 @@
 """温度グラフ生成."""
-
 import argparse
 import configparser
 import datetime
@@ -7,29 +6,47 @@ import os
 import typing as typ
 import bokeh.models as bm
 import bokeh.plotting as bp
+import pandas as pd
 import db_store
 
 
-def make_temp_graph(output_file: str, data: typ.List) -> None:
+def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List) -> None:
     """グラフ作成.
 
     Args:
         output_file: 出力ファイル名
-        data: データ
+        temp_data: 温度データ
+        co2_data: CO2データ
     """
-    cols: typ.Tuple = ("time", "temp")
-    datadict: typ.Dict = {}
-    for col in cols:
-        datadict[col] = []
-    for row in data:
-        datadict["time"].append(row["created_at"])
-        datadict["temp"].append(row["temp"] / 1000)
-
-    source: bp.ColumnDataSource = bp.ColumnDataSource(datadict)
     tooltips: typ.List[typ.Tuple[str, str]] = [
         ("time", "@time{%F %T}"),
-        ("temp", "@{temp}"),
     ]
+    df: pd.DataFrame
+    deg_max: int = 0
+    if len(temp_data) > 0:
+        df1: pd.DataFrame = pd.DataFrame(temp_data, columns=list(temp_data[0].keys()))
+        df1 = df1.rename(columns={"created_at": "time"})
+        if len(co2_data) > 0:
+            df1["time"] = df1["time"].apply(lambda x: x.replace(second=0, microsecond=0))
+        df1["temp"] /= 1000
+        df1 = df1[["time", "temp"]].drop_duplicates(subset="time")
+        df = df1
+        tooltips.append(("CPU温度", "@{temp}"))
+        deg_max = int(df["temp"].max()) + 10
+    if len(co2_data) > 0:
+        df2: pd.DataFrame = pd.DataFrame(co2_data, columns=list(co2_data[0].keys()))
+        df2 = df2.rename(columns={"temp": "temp2", "created_at": "time"})
+        if len(temp_data) > 0:
+            df2["time"] = df2["time"].apply(lambda x: x.replace(second=0, microsecond=0))
+        df2 = df2[["time", "co2", "temp2", "pressure", "ss"]].drop_duplicates(subset="time")
+        df = df2
+        tooltips.append(("気温", "@{temp2}"))
+        tooltips.append(("CO₂", "@{co2}"))
+        deg_max = max(deg_max, int(df["temp2"].max()) + 10)
+    if len(temp_data) > 0 and len(co2_data) > 0:
+        df = pd.merge(df1, df2, on="time", how="outer")
+
+    source: bp.ColumnDataSource = bp.ColumnDataSource(df)
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
 
     bp.output_file(output_file, title="Temperature")
@@ -43,11 +60,14 @@ def make_temp_graph(output_file: str, data: typ.List) -> None:
     fig.add_tools(hover_tool)
     fmt: typ.List[str] = ["%H:%M"]
     fig.xaxis.formatter = bm.DatetimeTickFormatter(hours=fmt, hourmin=fmt, minutes=fmt)
-    if len(data) > 0:
-        ymax: int = int(max(datadict["temp"]) + 10)
-        fig.y_range = bm.Range1d(0, ymax)
-
-    fig.line("time", "temp", legend_label="温度", line_color="red", source=source)
+    fig.y_range = bm.Range1d(0, deg_max)
+    if len(temp_data) > 0:
+        fig.line("time", "temp", legend_label="CPU温度", line_color="red", source=source)
+    if len(co2_data) > 0:
+        fig.line("time", "temp2", legend_label="気温", line_color="orange", source=source)
+        fig.extra_y_ranges = {"ppm": bm.Range1d(0, df["co2"].max() * 1.05)}
+        fig.add_layout(bm.LinearAxis(y_range_name="ppm", axis_label="濃度[ppm]"), "right")
+        fig.line("time", "co2", legend_label="CO₂", line_color="green", y_range_name="ppm", source=source)
 
     # fig.legend.click_policy = "hide"
 
@@ -87,10 +107,14 @@ def main() -> None:
     db_url: str = inifile.get("routeB", "db_url")
 
     store: db_store.DBStore = db_store.DBStore(db_url)
-    data: typ.List = store.select_temp_log(start_time, end_time)
+    temp_data: typ.List = store.select_temp_log(start_time, end_time)
+    co2_data: typ.List = store.select_co2_log(start_time, end_time)
 
-    make_temp_graph(output_file, data)
-    print(output_file)
+    if len(temp_data) > 0 or len(co2_data) > 0:
+        make_temp_graph(output_file, temp_data, co2_data)
+        print(output_file)
+    else:
+        print("no data")
 
 
 if __name__ == "__main__":
