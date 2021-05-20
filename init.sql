@@ -35,3 +35,11 @@ create table co2_log (
     ss int,
     created_at timestamp not null default current_timestamp
 );
+drop table bme280_log;
+create table bme280_log (
+    id serial primary key,
+    temp real,
+    pressure real,
+    humidity real,
+    created_at timestamp not null default current_timestamp
+);
