@@ -92,7 +92,7 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
     if len(co2_data) > 0:
         if len(bme280_data) == 0:
             fig.line("time", "temp2", legend_label="気温", line_color="orange", source=source)
-        fig.extra_y_ranges["ppm"] = bm.Range1d(0, df["co2"].max() * 1.05)
+        fig.extra_y_ranges["ppm"] = bm.Range1d(0, max(2000, df["co2"].max() * 1.05))
         fig.add_layout(bm.LinearAxis(y_range_name="ppm", axis_label="濃度[ppm]"), "right")
         fig.line("time", "co2", legend_label="CO₂", line_color="green", y_range_name="ppm", source=source)
     if len(bme280_data) > 0:
