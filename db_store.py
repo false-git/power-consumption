@@ -100,7 +100,22 @@ class DBStore:
             pressure: 謎
             ss: status
         """
-        self.cursor.execute("insert into co2_log (co2, temp, pressure, ss) values (%s, %s, %s, %s)", (co2, temp, pressure, ss))
+        self.cursor.execute(
+            "insert into co2_log (co2, temp, pressure, ss) values (%s, %s, %s, %s)", (co2, temp, pressure, ss)
+        )
+        self.connection.commit()
+
+    def bme280_log(self, temp: float, pressure: float, humidity: float) -> None:
+        """BM280の計測結果を登録する.
+
+        Args:
+            temp: 温度
+            pressure: 気圧
+            humidity: 湿度
+        """
+        self.cursor.execute(
+            "insert into bme280_log (temp, pressure, humidity) values (%s, %s, %s)", (temp, pressure, humidity)
+        )
         self.connection.commit()
 
     def select_scan_log(
@@ -171,6 +186,24 @@ class DBStore:
         """
         self.cursor.execute(
             "select * from co2_log where created_at >= %s and created_at < %s order by created_at",
+            (start_time, end_time),
+        )
+        return self.cursor.fetchall()
+
+    def select_bmw280_log(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> typ.List[psycopg2.extras.DictRow]:
+        """bme280_logからデータ取得.
+
+        Args:
+            start_time: 取得範囲の最初(start_timeを含む)
+            end_time: 取得範囲の最初(end_timeを含まない)
+
+        Returns:
+            データ
+        """
+        self.cursor.execute(
+            "select * from bme280_log where created_at >= %s and created_at < %s order by created_at",
             (start_time, end_time),
         )
         return self.cursor.fetchall()

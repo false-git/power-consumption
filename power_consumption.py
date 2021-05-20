@@ -11,6 +11,7 @@ import db_store
 import echonet
 import skcommand
 import mh_z19
+import bme280
 
 
 class PowerConsumption:
@@ -32,6 +33,7 @@ class PowerConsumption:
         self.connected: bool = False
         self.temp_flag: bool = False
         self.co2_flag: bool = False
+        self.bme280_flag: bool = False
 
     def main(self) -> None:
         """メイン処理."""
@@ -41,6 +43,7 @@ class PowerConsumption:
         parser.add_argument("-v", "--value", help="SKREG command with VALUE")
         parser.add_argument("-t", "--temp", action="store_true", help="log Raspberry pi temp")
         parser.add_argument("-c", "--co2", action="store_true", help="log MH-Z19 CO2")
+        parser.add_argument("-b", "--bme280", action="store_true", help="log BME280")
 
         args: argparse.Namespace = parser.parse_args()
 
@@ -57,6 +60,9 @@ class PowerConsumption:
 
         self.temp_flag = args.temp
         self.co2_flag = args.co2
+        self.bme280_flag = args.bme280
+        if self.bme280_flag:
+            self.bme280 = bme280.BME280()
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
@@ -68,7 +74,7 @@ class PowerConsumption:
         else:
             self.connected = True
 
-        if not self.temp_flag and self.co2_flag and not self.connected:
+        if not self.temp_flag and not self.co2_flag and not self.bme280_flag and not self.connected:
             sys.exit(1)
 
         if not self.connected:
@@ -194,6 +200,13 @@ class PowerConsumption:
         store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
         del store
 
+    def log_bme280(self) -> None:
+        """BME280の情報を記録する."""
+        d: typ.Tuple = self.bme280.read()
+        store: db_store.DBStore = db_store.DBStore(self.db_url)
+        store.bme280_log(d[1], d[0], d[2])
+        del store
+
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
@@ -203,6 +216,8 @@ class PowerConsumption:
                 self.log_temp()
             if self.co2_flag:
                 self.log_co2()
+            if self.bme280_flag:
+                self.log_bme280()
             if self.connected:
                 if not self.get_prop():
                     break

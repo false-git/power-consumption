@@ -11,9 +11,10 @@ psycopg2-binary = "^2.8.6"
 bokeh = {version = "^2.2.3", optional = true}
 mh-z19 = {version = "^3.0.2", optional = true}
 pandas = {version = "^1.2.4", optional = true}
+smbus = {version = "^1.1.post2", optional = true}
 
 [tool.poetry.extras]
-poller = ["pyserial", "mh-z19"]
+poller = ["pyserial", "mh-z19", "smbus"]
 graph = ["bokeh", "pandas"]
 
 [tool.poetry.dev-dependencies]
