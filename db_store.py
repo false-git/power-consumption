@@ -190,7 +190,7 @@ class DBStore:
         )
         return self.cursor.fetchall()
 
-    def select_bmw280_log(
+    def select_bme280_log(
         self, start_time: datetime.datetime, end_time: datetime.datetime
     ) -> typ.List[psycopg2.extras.DictRow]:
         """bme280_logからデータ取得.

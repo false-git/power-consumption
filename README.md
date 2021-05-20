@@ -13,6 +13,7 @@
   * `poetry run python power_consumption.py` でデータを収集して DB に格納します。
   * `poetry run python power_consumption.py -t` でCPU温度データも収集するようになります。(Raspberry pi専用)
     * `-c` オプションを付けると、MH-Z19系のCO2センサーの値も収集します。
+    * `-b` オプションを付けると、BME280のセンサーの値も収集します。
 * 収集したデータからグラフを作る側
   * `poetry install --no-dev -E graph` で実行環境を整えます。
   * `poetry run python power_graph.py` で当日分の電力消費量グラフを生成します。
