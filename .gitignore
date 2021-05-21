@@ -130,3 +130,5 @@ dmypy.json
 
 power_consumption.ini
 poetry.lock
+
+test/bme280
