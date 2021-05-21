@@ -20,6 +20,12 @@
   * `poetry run python temp_graph.py` で当日分の温度グラフを生成します。
 * それぞれ、-h をつけて実行するとヘルプが出ます。
 
+## 記事
+
+* [スマートメーターから電力消費量を取得する - Qiita](https://qiita.com/false-git@github/items/ebcaaae4d54f2393efa7)
+* [Raspberry piでセンサーデータを取得する(MH-Z19)](https://zenn.dev/false/articles/0001-a9d5d3903afed72a06bc)
+* [Raspberry piでセンサーデータを取得する(BME280)](https://zenn.dev/false/articles/0002-9d350ab7a2fc904aa5bb)
+
 ## 参考
 
 * [Skyley Networks　/　Bルートやってみた](http://www.skyley.com/products/b-route.html)
