@@ -233,7 +233,7 @@ class PowerConsumption:
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
         del store
-        return (d["cod"], d["temperature"])
+        return (d["co2"], d["temperature"])
 
     def log_bme280(self) -> typ.Tuple:
         """BME280の情報を記録する.

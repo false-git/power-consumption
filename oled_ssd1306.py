@@ -22,9 +22,9 @@ class Display:
         """
         i2c: board.I2C = board.I2C()
         self.oled: adafruit_ssd1306.SSD1306_I2C = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=address)
-        self.image: Image = Image("1", (self.oled.width, self.oled.height))
-        self.draw: ImageDraw = ImageDraw(self.image)
-        self.font: ImageFont = ImageFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+        self.image: Image = Image.new("1", (self.oled.width, self.oled.height))
+        self.draw: ImageDraw = ImageDraw.Draw(self.image)
+        self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", 14)
         self.button: gpiozero.Button = gpiozero.Button(pin)
         self.is_pressed: bool = self.button.is_pressed
         self.is_display: bool = False
@@ -58,7 +58,7 @@ class Display:
         self.draw.rectangle([0, 0, WIDTH, HEIGHT], fill=0)
         y: int = 0
         if co2 is not None:
-            self.draw.text((0, y), f"CO₂  {co2:6.1f} ppm", font=self.font, fill=255)
+            self.draw.text((0, y), f"CO2  {co2:6.1f} ppm", font=self.font, fill=255)
             y += 16
         if temp is not None:
             self.draw.text((0, y), f"気温 {temp:6.1f} ℃", font=self.font, fill=255)
@@ -67,7 +67,7 @@ class Display:
             self.draw.text((0, y), f"湿度 {hum:6.1f} %", font=self.font, fill=255)
             y += 16
         if pres is not None:
-            self.draw.text((0, y), f"気圧 {pres:6.1f} %", font=self.font, fill=255)
+            self.draw.text((0, y), f"気圧 {pres:6.1f} hPa", font=self.font, fill=255)
             y += 16
 
         if self.is_display:
