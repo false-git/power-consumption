@@ -12,9 +12,12 @@ bokeh = {version = "^2.2.3", optional = true}
 mh-z19 = {version = "^3.0.2", optional = true}
 pandas = {version = "^1.2.4", optional = true}
 smbus = {version = "^1.1.post2", optional = true}
+gpiozero = {version = "^1.6.2", optional = true}
+adafruit-circuitpython-ssd1306 = {version = "^2.11.4", optional = true}
+Pillow = {version = "^8.2.0", optional = true}
 
 [tool.poetry.extras]
-poller = ["pyserial", "mh-z19", "smbus"]
+poller = ["pyserial", "mh-z19", "smbus", "gpiozero", "adafruit-circuitpython-ssd1306", "Pillow"]
 graph = ["bokeh", "pandas"]
 
 [tool.poetry.dev-dependencies]
