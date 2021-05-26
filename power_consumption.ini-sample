@@ -31,3 +31,9 @@ db_url = postgresql://<username>:<password>@<hostname>/<dbname>
 #t_sb = 0
 # IIRフィルタ(0: オフ、1: 2, 2: 4, 3: 8, 4: 16)
 #filter = 4
+
+[ssd1306]
+# I²Cアドレス (60 = 0x3c)
+#address = 60
+# ボタンまたはセンサの pin 番号
+#pin = 4

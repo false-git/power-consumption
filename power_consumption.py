@@ -2,6 +2,7 @@
 
 import argparse
 import configparser
+from oled_ssd1306 import Display
 import re
 import struct
 import sys
@@ -12,6 +13,7 @@ import echonet
 import skcommand
 import mh_z19
 import bme280
+import oled_ssd1306
 
 
 class PowerConsumption:
@@ -35,6 +37,7 @@ class PowerConsumption:
         self.temp_flag: bool = False
         self.co2_flag: bool = False
         self.bme280_flag: bool = False
+        self.display_flag: bool = False
 
     def main(self) -> None:
         """メイン処理."""
@@ -45,6 +48,7 @@ class PowerConsumption:
         parser.add_argument("-t", "--temp", action="store_true", help="log Raspberry pi temp")
         parser.add_argument("-c", "--co2", action="store_true", help="log MH-Z19 CO2")
         parser.add_argument("-b", "--bme280", action="store_true", help="log BME280")
+        parser.add_argument("-d", "--display", action="store_true", help="enable display")
 
         args: argparse.Namespace = parser.parse_args()
 
@@ -62,6 +66,7 @@ class PowerConsumption:
         self.temp_flag = args.temp
         self.co2_flag = args.co2
         self.bme280_flag = args.bme280
+        self.display_flag = args.display
         if self.bme280_flag:
             bus: int = self.inifile.getint("bme280", "bus", fallback=1)
             address: int = self.inifile.getint("bme280", "address", fallback=0x76)
@@ -79,6 +84,10 @@ class PowerConsumption:
                 t_sb=t_sb,
                 filter=filter,
             )
+        if self.display_flag:
+            display_address: int = self.inifile.getint("ssd1306", "address", fallback=0x3c)
+            button_pin: str = self.inifile.get("ssd1306", "pin", fallback="4")
+            self.display = Display(display_address, button_pin)
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
@@ -200,43 +209,64 @@ class PowerConsumption:
 
         return True
 
-    def log_temp(self) -> None:
-        """温度を記録する."""
+    def log_temp(self) -> float:
+        """温度を記録する.
+
+        Returns:
+            CPU温度
+        """
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             temp: int = int(f.readline())
 
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.temp_log(temp)
         del store
+        return float(temp)
 
-    def log_co2(self) -> None:
-        """CO2を記録する."""
+    def log_co2(self) -> typ.Tuple[int, float]:
+        """CO2を記録する.
+
+        Returns:
+            CO2濃度, 気温
+        """
         d: typ.Dict = mh_z19.read_all(serial_console_untouched=True)
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
         del store
+        return (d["cod"], d["temperature"])
 
-    def log_bme280(self) -> None:
-        """BME280の情報を記録する."""
+    def log_bme280(self) -> typ.Tuple:
+        """BME280の情報を記録する.
+
+        Returns:
+            気圧, 気温, 湿度
+        """
         d: typ.Tuple = self.bme280.read()
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.bme280_log(d[1], d[0], d[2])
         del store
+        return d
 
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
         while True:
             next_time: int = (int(time.time()) // interval + 1) * interval
+            temp: typ.Optional[float] = None
+            hum: typ.Optional[float] = None
+            pres: typ.Optional[float] = None
+            co2: typ.Optional[int] = None
             if self.temp_flag:
-                self.log_temp()
+                temp = self.log_temp()
             if self.co2_flag:
-                self.log_co2()
+                (co2, temp) = self.log_co2()
             if self.bme280_flag:
-                self.log_bme280()
+                (pres, temp, hum) = self.log_bme280()
             if self.connected:
                 if not self.get_prop():
                     break
+            if self.display_flag:
+                self.display.update(co2, temp, hum, pres)
             now: float = time.time()
             if self.connected:
                 while now < next_time:
