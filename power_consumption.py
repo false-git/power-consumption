@@ -21,6 +21,7 @@ class PowerConsumption:
         """初期化."""
         inifile: configparser.ConfigParser = configparser.ConfigParser()
         inifile.read("power_consumption.ini", "utf-8")
+        self.inifile: configparser.ConfigParser = inifile
         device: str = inifile.get("routeB", "device")
         timeout: float = inifile.getfloat("routeB", "timeout", fallback=5)
         debug: bool = inifile.getboolean("routeB", "debug", fallback=False)
@@ -62,7 +63,22 @@ class PowerConsumption:
         self.co2_flag = args.co2
         self.bme280_flag = args.bme280
         if self.bme280_flag:
-            self.bme280 = bme280.BME280()
+            bus: int = self.inifile.getint("bme280", "bus", fallback=1)
+            address: int = self.inifile.getint("bme280", "address", fallback=0x76)
+            osrs_h: int = self.inifile.getint("bme280", "osrs_h", fallback=1)
+            osrs_t: int = self.inifile.getint("bme280", "osrs_t", fallback=2)
+            osrs_p: int = self.inifile.getint("bme280", "osrs_p", fallback=5)
+            t_sb: int = self.inifile.getint("bme280", "t_sb", fallback=0)
+            filter: int = self.inifile.getint("bme280", "filter", fallback=4)
+            self.bme280 = bme280.BME280(
+                bus,
+                address,
+                osrs_h=osrs_h,
+                osrs_t=osrs_t,
+                osrs_p=osrs_p,
+                t_sb=t_sb,
+                filter=filter,
+            )
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
