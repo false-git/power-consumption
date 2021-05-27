@@ -87,7 +87,8 @@ class PowerConsumption:
         if self.display_flag:
             display_address: int = self.inifile.getint("ssd1306", "address", fallback=0x3c)
             button_pin: str = self.inifile.get("ssd1306", "pin", fallback="4")
-            self.display = Display(display_address, button_pin)
+            contrast: int = self.inifile.getint("ssd1306", "contrast", fallback=1)
+            self.display = Display(display_address, button_pin, contrast)
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
