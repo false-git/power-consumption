@@ -26,7 +26,7 @@ class Display:
         self.oled.contrast(contrast)
         self.image: Image = Image.new("1", (self.oled.width, self.oled.height))
         self.draw: ImageDraw = ImageDraw.Draw(self.image)
-        self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", 16)
+        self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/horai-umefont/ume-tmo4.ttf", 16)
         self.button: gpiozero.Button = gpiozero.Button(pin)
         self.is_pressed: bool = self.button.is_pressed
         self.is_display: bool = True
@@ -61,7 +61,7 @@ class Display:
         self.draw.rectangle([0, 0, WIDTH, HEIGHT], fill=0)
         y: int = 0
         if co2 is not None:
-            self.draw.text((0, y), f"CO2  {co2:6.1f} ppm", font=self.font, fill=255)
+            self.draw.text((0, y), f"CO₂  {co2:6.1f} ppm", font=self.font, fill=255)
             y += 16
         if temp is not None:
             self.draw.text((0, y), f"気温 {temp:6.1f} ℃", font=self.font, fill=255)
