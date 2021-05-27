@@ -26,7 +26,7 @@ class Display:
         self.oled.contrast(contrast)
         self.image: Image = Image.new("1", (self.oled.width, self.oled.height))
         self.draw: ImageDraw = ImageDraw.Draw(self.image)
-        self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", 14)
+        self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", 16)
         self.button: gpiozero.Button = gpiozero.Button(pin)
         self.is_pressed: bool = self.button.is_pressed
         self.is_display: bool = False
