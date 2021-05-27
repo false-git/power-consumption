@@ -29,9 +29,9 @@ class Display:
         self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", 16)
         self.button: gpiozero.Button = gpiozero.Button(pin)
         self.is_pressed: bool = self.button.is_pressed
-        self.is_display: bool = False
-        self.clear()
-        self.is_display = self.is_pressed
+        self.is_display: bool = True
+        if not self.is_pressed:
+            self.clear()
         self.last_released: float = time.perf_counter()
         self.button.when_pressed = self.pressed
         self.button.when_released = self.released
@@ -39,14 +39,15 @@ class Display:
     def clear(self) -> None:
         """画面消去."""
         self.is_display = False
-        self.oled.fill(0)
-        self.oled.show()
+        self.oled.poweroff()
 
     def redraw(self)->None:
         """画面描画."""
+        if not self.is_display:
+            self.oled.poweron()
+            self.is_display = True
         self.oled.image(self.image)
         self.oled.show()
-        self.is_display = True
 
     def update(self, co2: typ.Optional[int], temp: typ.Optional[float], hum: typ.Optional[float], pres: typ.Optional[float]) -> None:
         """画面を更新する.
