@@ -13,15 +13,17 @@ HEIGHT: int = 64
 class Display:
     """OLED Display."""
 
-    def __init__(self, address: int, pin: str) -> None:
+    def __init__(self, address: int, pin: str, contrast: int) -> None:
         """初期化.
 
         Args:
             address: OLED の I²Cアドレス
             pin: スイッチのpinアドレス
+            contrast: 輝度(0〜255)、0で消える。
         """
         i2c: board.I2C = board.I2C()
         self.oled: adafruit_ssd1306.SSD1306_I2C = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=address)
+        self.oled.contrast(contrast)
         self.image: Image = Image.new("1", (self.oled.width, self.oled.height))
         self.draw: ImageDraw = ImageDraw.Draw(self.image)
         self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/fonts-japanese-gothic.ttf", 14)
@@ -86,6 +88,6 @@ class Display:
         self.last_released = time.perf_counter()
 
 if __name__ == "__main__":
-    display: Display = Display(0x3c, "4")
+    display: Display = Display(0x3c, "4", 1)
     display.update(800, 12.3, 34.5, 1234.5)
     time.sleep(10)
