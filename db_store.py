@@ -215,12 +215,12 @@ class DBStore:
             最新のログ
         """
         result: typ.Dict = {}
-        self.cursor.execute("select * from power_log order by created_at limit 1")
+        self.cursor.execute("select * from power_log order by created_at desc limit 1")
         result["power"] = self.cursor.fetchone()
-        self.cursor.execute("select * from temp_log order by created_at limit 1")
+        self.cursor.execute("select * from temp_log order by created_at desc limit 1")
         result["temp"] = self.cursor.fetchone()
-        self.cursor.execute("select * from co2_log order by created_at limit 1")
+        self.cursor.execute("select * from co2_log order by created_at desc limit 1")
         result["co2"] = self.cursor.fetchone()
-        self.cursor.execute("select * from bme280_log order by created_at limit 1")
+        self.cursor.execute("select * from bme280_log order by created_at desc limit 1")
         result["bme280"] = self.cursor.fetchone()
         return result

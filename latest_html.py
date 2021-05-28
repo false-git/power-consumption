@@ -33,6 +33,14 @@ def main() -> None:
             "<html lang='ja'>\n",
             "<head>\n",
             "<meta charset='utf-8'/>\n",
+            "<meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=yes'>\n",
+            "<style type='text/css'>\n",
+            "body { font-size: x-large; }\n",
+            ".red { color: red; }\n",
+            ".blue { color: blue; }\n",
+            ".green { color: green; }\n",
+            ".right { text-align: right; }\n",
+            "</style>\n",
             "</head>\n",
             "<body>\n",
             "<table>\n"
@@ -40,27 +48,45 @@ def main() -> None:
         if data["power"] is not None:
             created_at: str = data["power"]["created_at"].strftime("%Y/%m/%d %H:%M:%S")
             瞬時電力: int = data["power"]["瞬時電力"]
-            瞬時電流_r: float = data["power"]["瞬時電流_r"] / 10
-            瞬時電流_t: float = data["power"]["瞬時電流_t"] / 10
+            瞬時電流: float = (data["power"]["瞬時電流_r"] + data["power"]["瞬時電流_t"]) / 10
+            電流_color: str = ""
+            if 瞬時電流 > 28:
+                電流_color = "red"
+            elif 瞬時電流 > 15:
+                電流_color = "blue"
             out.write(f"<tr><td colspan=3>{created_at}</td></tr>\n")
-            out.write(f"<tr><td>瞬時電力</td><td style='text-align: right;'>{瞬時電力}</td><td>[W]</td></tr>\n")
-            out.write(f"<tr><td>瞬時電流(R相)</td><td style='text-align: right;'>{瞬時電流_r}</td><td>[A]</td></tr>\n")
-            out.write(f"<tr><td>瞬時電流(T相)</td><td style='text-align: right;'>{瞬時電流_t}</td><td>[A]</td></tr>\n")
+            out.write(f"<tr><td>瞬時電力</td><td class='right'>{瞬時電力}</td><td>[W]</td></tr>\n")
+            out.write(f"<tr><td>瞬時電流</td><td class='right {電流_color}'>{瞬時電流}</td><td>[A]</td></tr>\n")
         if data["temp"] is not None:
             CPU: float = data["temp"]["temp"] / 1000
-            out.write(f"<tr><td>CPU温度</td><td style='text-align: right;'>{CPU:.1f}</td><td>[℃]</td></tr>\n")
+            out.write(f"<tr><td>CPU温度</td><td class='right'>{CPU:.1f}</td><td>[℃]</td></tr>\n")
         if data["co2"] is not None:
             CO2: int = data["co2"]["co2"]
+            co2_color: str = "blue"
+            if CO2 > 2000:
+                co2_color = "red"
+            elif CO2 > 1000:
+                co2_color = "green"
             #temp: int = data["co2"]["temp"]
-            out.write(f"<tr><td>CO₂濃度</td><td style='text-align: right;'>{CO2}</td><td>[ppm]</td></tr>\n")
-            #out.write(f"<tr><td>気温</td><td style='text-align: right;'>{temp}</td><td>[℃]</td></tr>\n")
+            out.write(f"<tr><td>CO₂濃度</td><td class='right {co2_color}'>{CO2}</td><td>[ppm]</td></tr>\n")
+            #out.write(f"<tr><td>気温</td><td class='right'>{temp}</td><td>[℃]</td></tr>\n")
         if data["bme280"] is not None:
             temp: float = data["bme280"]["temp"]
             hum: float = data["bme280"]["humidity"]
             pres: float = data["bme280"]["pressure"]
-            out.write(f"<tr><td>気温</td><td style='text-align: right;'>{temp:.1f}</td><td>[℃]</td></tr>\n")
-            out.write(f"<tr><td>湿度</td><td style='text-align: right;'>{hum:.1f}</td><td>[%]</td></tr>\n")
-            out.write(f"<tr><td>気圧</td><td style='text-align: right;'>{pres:.1f}</td><td>[hPa]</td></tr>\n")
+            temp_color: str = "green"
+            if temp < 18:
+                temp_color = "blue"
+            elif temp > 25:
+                temp_color = "red"
+            hum_color: str = "green"
+            if hum < 40:
+                hum_color = "blue"
+            elif hum > 65:
+                hum_color = "red"
+            out.write(f"<tr><td>気温</td><td class='right {temp_color}'>{temp:.1f}</td><td>[℃]</td></tr>\n")
+            out.write(f"<tr><td>湿度</td><td class='right {hum_color}'>{hum:.1f}</td><td>[%]</td></tr>\n")
+            out.write(f"<tr><td>気圧</td><td class='right'>{pres:.1f}</td><td>[hPa]</td></tr>\n")
         out.writelines([
             "</table>\n"
             "</body>\n",
