@@ -13,7 +13,6 @@ import echonet
 import skcommand
 import mh_z19
 import bme280
-import oled_ssd1306
 
 
 class PowerConsumption:
@@ -85,7 +84,7 @@ class PowerConsumption:
                 filter=filter,
             )
         if self.display_flag:
-            display_address: int = self.inifile.getint("ssd1306", "address", fallback=0x3c)
+            display_address: int = self.inifile.getint("ssd1306", "address", fallback=0x3C)
             button_pin: str = self.inifile.get("ssd1306", "pin", fallback="4")
             contrast: int = self.inifile.getint("ssd1306", "contrast", fallback=1)
             self.display = Display(display_address, button_pin, contrast)
@@ -231,10 +230,13 @@ class PowerConsumption:
             CO2濃度, 気温
         """
         d: typ.Dict = mh_z19.read_all(serial_console_untouched=True)
-        store: db_store.DBStore = db_store.DBStore(self.db_url)
-        store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
-        del store
-        return (d["co2"], d["temperature"])
+        self.sk.debug_print(f"MH_Z19: {d}")
+        if "co2" in d:
+            store: db_store.DBStore = db_store.DBStore(self.db_url)
+            store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
+            del store
+            return (d["co2"], d["temperature"])
+        return (0, 0)
 
     def log_bme280(self) -> typ.Tuple:
         """BME280の情報を記録する.
