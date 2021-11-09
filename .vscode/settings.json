@@ -6,9 +6,13 @@
         "-workbench.action.quickOpen",
         "-workbench.action.terminal.focusFindWidget",
     ],
-    "python.pythonPath": ".venv/bin/python3.9",
     "python.formatting.provider": "black",
     "python.linting.flake8Enabled": true,
     "python.linting.pylintEnabled": false,
     "python.linting.mypyEnabled": true,
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/.venv/**": true
+    }
 }
