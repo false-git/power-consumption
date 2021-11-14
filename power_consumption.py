@@ -5,6 +5,7 @@ import configparser
 from oled_ssd1306 import Display
 import re
 import struct
+import subprocess
 import sys
 import time
 import typing as typ
@@ -29,6 +30,22 @@ class PowerConsumption:
         self.routeB_id: str = inifile.get("routeB", "id")
         self.routeB_password: str = inifile.get("routeB", "password")
         self.db_url: str = inifile.get("routeB", "db_url")
+        self.zabbix_server: typ.Optional[str] = inifile.get("zabbix", "server")
+        self.zabbix_port: int = inifile.getint("zabbix", "port", fallback=10051)
+        self.zabbix_host: typ.Optional[str] = inifile.get("zabbix", "host")
+        self.zabbix_key_prefix: str = inifile.get("zabbix", "key_prefix", fallback="pc")
+        self.zabbix_trap: typ.Optional[typ.TextIO] = None
+        self.zabbix_command: typ.List[str] = [
+            "zabbix_sender",
+            "-z",
+            self.zabbix_server,
+            "-p",
+            f"{self.zabbix_port}",
+            "-s",
+            self.zabbix_host,
+            "-i",
+            "zabbix.trap",
+        ]
 
         self.sk: skcommand.SKSerial = skcommand.SKSerial(device, timeout, debug)
 
@@ -161,6 +178,16 @@ class PowerConsumption:
             return False
         return True
 
+    def add_zabbix(self, key: str, value: typ.Any) -> None:
+        """zabbixに送信するデータを追加する.
+
+        Args:
+            key: キー
+            value: 値
+        """
+        if self.zabbix_trap:
+            print(f"- {self.zabbix_key_prefix}.{key} {value}", file=self.zabbix_trap)
+
     def get_prop(self) -> bool:
         """property値読み出し.
 
@@ -207,6 +234,13 @@ class PowerConsumption:
         store.power_log(係数, 積算電力量, 電力量単位, 瞬時電力, 瞬時電流_R, 瞬時電流_T)
         del store
 
+        self.add_zabbix("coefficient", 係数)
+        self.add_zabbix("energy", 積算電力量)
+        self.add_zabbix("energy_unit", 電力量単位)
+        self.add_zabbix("power", 瞬時電力)
+        self.add_zabbix("current_R", 瞬時電流_R)
+        self.add_zabbix("current_T", 瞬時電流_T)
+
         return True
 
     def log_temp(self) -> float:
@@ -221,6 +255,7 @@ class PowerConsumption:
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.temp_log(temp)
         del store
+        self.add_zabbix("cpu_temperature", temp)
         return float(temp)
 
     def log_co2(self) -> typ.Tuple[int, float]:
@@ -235,6 +270,7 @@ class PowerConsumption:
             store: db_store.DBStore = db_store.DBStore(self.db_url)
             store.co2_log(d["co2"], d["temperature"], d["UhUl"], d["SS"])
             del store
+            self.add_zabbix("co2", d["co2"])
             return (d["co2"], d["temperature"])
         return (0, 0)
 
@@ -248,12 +284,17 @@ class PowerConsumption:
         store: db_store.DBStore = db_store.DBStore(self.db_url)
         store.bme280_log(d[1], d[0], d[2])
         del store
+        self.add_zabbix("temperature", d[1])
+        self.add_zabbix("pressure", d[0])
+        self.add_zabbix("humidity", d[2])
         return d
 
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
         while True:
+            if self.zabbix_server:
+                self.zabbix_trap = open("zabbix.trap", "wt")
             next_time: int = (int(time.time()) // interval + 1) * interval
             temp: typ.Optional[float] = None
             hum: typ.Optional[float] = None
@@ -267,9 +308,19 @@ class PowerConsumption:
                 (pres, temp, hum) = self.log_bme280()
             if self.connected:
                 if not self.get_prop():
-                    break
+                    self.sk.debug_print("RETRY OUT")
+                    if self.scan() and self.join() and self.get_prop():
+                        self.sk.debug_print("RECOVERY")
+                    else:
+                        self.sk.debug_print("GIVE UP")
+                        break
             if self.display_flag:
                 self.display.update(co2, temp, hum, pres)
+            if self.zabbix_trap:
+                self.zabbix_trap.close()
+                with open("zabbix.log", "wt") as zabbix_log:
+                    subprocess.run(self.zabbix_command, stdout=zabbix_log, stderr=subprocess.STDOUT)
+                self.zabbix_trap = None
             now: float = time.time()
             if self.connected:
                 while now < next_time:
