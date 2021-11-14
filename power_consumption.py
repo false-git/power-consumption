@@ -267,7 +267,12 @@ class PowerConsumption:
                 (pres, temp, hum) = self.log_bme280()
             if self.connected:
                 if not self.get_prop():
-                    break
+                    self.sk.debug_print("RETRY OUT")
+                    if self.scan() and self.join() and self.get_prop():
+                        self.sk.debug_print("RECOVERY")
+                    else:
+                        self.sk.debug_print("GIVE UP")
+                        break
             if self.display_flag:
                 self.display.update(co2, temp, hum, pres)
             now: float = time.time()
