@@ -33,9 +33,19 @@ db_url = postgresql://<username>:<password>@<hostname>/<dbname>
 #filter = 4
 
 [ssd1306]
-# I²Cアドレス (60 = 0x3c)
+# I²Cアドレス (60 = 0x3c)
 #address = 60
 # ボタンまたはセンサの pin 番号
 #pin = 4
 # 輝度(0〜255。0で消える)
 #contrast = 1
+
+[zabbix]
+# Zabbix server
+#server = <host name or ip address>
+# Zabbix port
+#port = 10051
+# Zabbix host
+#host = <hostname of data>
+# Zabbix key prefix
+#key_prefix = pc

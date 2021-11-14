@@ -21,6 +21,23 @@
   * `poetry run python temp_graph.py` で当日分の温度グラフを生成します。
 * それぞれ、-h をつけて実行するとヘルプが出ます。
 
+### zabbix対応
+
+* power_consumption.ini の zabbix セクションの、server に値が入っていると、zabbix_sender を使って zabbix サーバにデータを送ります。
+  * 他に、最低限 zabbix セクションの host の設定が必要です。
+* サーバ側で、以下のキーを作成しておいてください。(pc. の部分は、key_prefix で変更できます。)
+  * pc.coefficient: 係数(整数)
+  * pc.energy: 積算電力量(整数)
+  * pc.energy_unit: 電力量単位(整数)
+  * pc.power: 瞬時電力(整数)
+  * pc.current_R: 瞬時電流_R(整数)
+  * pc.current_T: 瞬時電流_T(整数)
+  * pc.cpu_temperature: CPU温度(整数) ※ 保存前処理で「乗数」「0.001」を指定してください。
+  * pc.co2: CO₂濃度(実数)
+  * pc.temperature: 気温(浮動小数)
+  * pc.pressure: 気圧(浮動小数)
+  * pc.humidity: 湿度(浮動小数)
+
 ## 記事
 
 * [スマートメーターから電力消費量を取得する - Qiita](https://qiita.com/false-git@github/items/ebcaaae4d54f2393efa7)
