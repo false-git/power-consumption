@@ -262,7 +262,7 @@ class SKSerial:
         success: bool = False
         response: typ.List[str] = [TIMEOUT_MARK]
         timeout_count: int = -1
-        while timeout_count < 10:
+        while timeout_count < 5:
             if len(response) > 0 and response[-1] == TIMEOUT_MARK:
                 self.writeline(f"SKSENDTO 1 {ipv6addr} {PORT_ECHONETLite} 1 {len(bin):04X} ", bin)
                 timeout_count += 1

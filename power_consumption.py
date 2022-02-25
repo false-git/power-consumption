@@ -50,6 +50,7 @@ class PowerConsumption:
         self.sk: skcommand.SKSerial = skcommand.SKSerial(device, timeout, debug)
 
         self.connected: bool = False
+        self.sk_flag: bool = True
         self.temp_flag: bool = False
         self.co2_flag: bool = False
         self.bme280_flag: bool = False
@@ -108,19 +109,13 @@ class PowerConsumption:
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
-        elif not self.scan():
-            pass
-        elif not self.join():
-            # TODO: リトライとかをどうするか要検討
-            pass
-        else:
-            self.connected = True
-
-        if not self.temp_flag and not self.co2_flag and not self.bme280_flag and not self.connected:
-            sys.exit(1)
-
-        if not self.connected:
+            self.sk_flag = False
             self.sk.close()
+        else:
+            self.connected = self.scan() and self.join()
+
+        if not self.temp_flag and not self.co2_flag and not self.bme280_flag and not self.sk_flag:
+            sys.exit(1)
 
         try:
             self.task()
@@ -292,6 +287,7 @@ class PowerConsumption:
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
+        wait_counter: int = 10
         while True:
             if self.zabbix_server:
                 self.zabbix_trap = open("zabbix.trap", "wt")
@@ -306,14 +302,20 @@ class PowerConsumption:
                 (co2, temp) = self.log_co2()
             if self.bme280_flag:
                 (pres, temp, hum) = self.log_bme280()
-            if self.connected:
-                if not self.get_prop():
-                    self.sk.debug_print("RETRY OUT")
+            if self.sk_flag:
+                if self.connected:
+                    if not self.get_prop():
+                        self.sk.debug_print("RETRY OUT")
+                        self.connected = False
+                        wait_counter = 10
+                elif wait_counter > 0:
+                    wait_counter -= 1
+                else:
                     if self.scan() and self.join() and self.get_prop():
                         self.sk.debug_print("RECOVERY")
+                        self.connected = True
                     else:
-                        self.sk.debug_print("GIVE UP")
-                        break
+                        wait_counter = 10
             if self.display_flag:
                 self.display.update(co2, temp, hum, pres)
             if self.zabbix_trap:
