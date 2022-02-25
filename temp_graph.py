@@ -49,7 +49,7 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
             df2["time"] = df2["time"].apply(lambda x: x.replace(second=0, microsecond=0))
         df2 = df2[["time", "co2", "temp2"]].drop_duplicates(subset="time")
         if len(temp_data) > 0:
-            df = pd.merge(df1, df2, on="time", how="outer")
+            df = pd.merge(df1, df2, on="time", how="outer").sort_values("time")
         else:
             df = df2
         if len(bme280_data) == 0:
@@ -63,7 +63,7 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
             df3["time"] = df3["time"].apply(lambda x: x.replace(second=0, microsecond=0))
         df3 = df3[["time", "temp3", "pressure", "humidity"]].drop_duplicates(subset="time")
         if num_data > 1:
-            df = pd.merge(df, df3, on="time", how="outer")
+            df = pd.merge(df, df3, on="time", how="outer").sort_values("time")
         else:
             df = df3
         tooltips.append(("気温", "@temp3{0.0}"))
@@ -98,7 +98,7 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
     if len(bme280_data) > 0:
         fig.line("time", "temp3", legend_label="気温", line_color="darkorange", source=source)
         fig.line("time", "humidity", legend_label="湿度", line_color="blue", source=source)
-        fig.extra_y_ranges["pressure"] = bm.Range1d(0, df["pressure"].max() * 1.05)
+        fig.extra_y_ranges["pressure"] = bm.Range1d(min(990, df["pressure"].min()), max(1020, df["pressure"].max()))
         fig.add_layout(bm.LinearAxis(y_range_name="pressure", axis_label="気圧[hPa]"), "right")
         fig.line("time", "pressure", legend_label="気圧", line_color="deeppink", y_range_name="pressure", source=source)
 
