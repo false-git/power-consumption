@@ -208,8 +208,11 @@ class DBStore:
         )
         return self.cursor.fetchall()
 
-    def select_latest_log(self)->typ.Dict:
+    def select_latest_log(self, moving_start: datetime.datetime) -> typ.Dict:
         """最新のログを返す.
+
+        Args:
+            moving_start: 移動平均の開始時刻(含まない)
 
         Returns:
             最新のログ
@@ -217,6 +220,11 @@ class DBStore:
         result: typ.Dict = {}
         self.cursor.execute("select * from power_log order by created_at desc limit 1")
         result["power"] = self.cursor.fetchone()
+        self.cursor.execute(
+            "select avg(瞬時電力) as 瞬時電力, avg(瞬時電流_r + 瞬時電流_t) as 瞬時電流 from power_log where created_at > %s",
+            (moving_start,),
+        )
+        result["power_average"] = self.cursor.fetchone()
         self.cursor.execute("select * from temp_log order by created_at desc limit 1")
         result["temp"] = self.cursor.fetchone()
         self.cursor.execute("select * from co2_log order by created_at desc limit 1")
