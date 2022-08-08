@@ -63,9 +63,9 @@ def main() -> None:
                 電流_color = "blue"
             out.write(f"<tr><td colspan=3>{created_at}</td></tr>\n")
             out.write(f"<tr><td>瞬時電力</td><td class='right'>{瞬時電力}</td><td>[W]</td></tr>\n")
-            out.write(f"<tr><td>平均瞬時電力</td><td class='right'>{平均瞬時電力:.0f}</td><td>[W]</td></tr>\n")
+            out.write(f"<tr><td>　(平均)</td><td class='right'>{平均瞬時電力:.0f}</td><td>[W]</td></tr>\n")
             out.write(f"<tr><td>瞬時電流</td><td class='right {電流_color}'>{瞬時電流}</td><td>[A]</td></tr>\n")
-            out.write(f"<tr><td>平均瞬時電流</td><td class='right {電流_color}'>{平均瞬時電流:.1f}</td><td>[A]</td></tr>\n")
+            out.write(f"<tr><td>　(平均)</td><td class='right {電流_color}'>{平均瞬時電流:.1f}</td><td>[A]</td></tr>\n")
         if data["temp"] is not None:
             CPU: float = data["temp"]["temp"] / 1000
             out.write(f"<tr><td>CPU温度</td><td class='right'>{CPU:.1f}</td><td>[℃]</td></tr>\n")
