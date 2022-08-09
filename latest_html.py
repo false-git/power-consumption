@@ -54,8 +54,8 @@ def main() -> None:
             created_at: str = data["power"]["created_at"].strftime("%Y/%m/%d %H:%M:%S")
             瞬時電力: int = data["power"]["瞬時電力"]
             瞬時電流: float = (data["power"]["瞬時電流_r"] + data["power"]["瞬時電流_t"]) / 10
-            平均瞬時電力: float = data["power_average"]["瞬時電力"]
-            平均瞬時電流: float = data["power_average"]["瞬時電流"] / 10
+            平均瞬時電力: typ.Optional[float] = data["power_average"]["瞬時電力"]
+            平均瞬時電流: typ.Optional[float] = data["power_average"]["瞬時電流"] / 10
             電流_color: str = ""
             if 瞬時電流 > 28:
                 電流_color = "red"
@@ -63,9 +63,11 @@ def main() -> None:
                 電流_color = "blue"
             out.write(f"<tr><td colspan=3>{created_at}</td></tr>\n")
             out.write(f"<tr><td>瞬時電力</td><td class='right'>{瞬時電力}</td><td>[W]</td></tr>\n")
-            out.write(f"<tr><td>　(平均)</td><td class='right'>{平均瞬時電力:.0f}</td><td>[W]</td></tr>\n")
+            if 平均瞬時電力 is not None:
+                out.write(f"<tr><td>　(平均)</td><td class='right'>{平均瞬時電力:.0f}</td><td>[W]</td></tr>\n")
             out.write(f"<tr><td>瞬時電流</td><td class='right {電流_color}'>{瞬時電流}</td><td>[A]</td></tr>\n")
-            out.write(f"<tr><td>　(平均)</td><td class='right {電流_color}'>{平均瞬時電流:.1f}</td><td>[A]</td></tr>\n")
+            if 平均瞬時電流 is not None:
+                out.write(f"<tr><td>　(平均)</td><td class='right {電流_color}'>{平均瞬時電流:.1f}</td><td>[A]</td></tr>\n")
         if data["temp"] is not None:
             CPU: float = data["temp"]["temp"] / 1000
             out.write(f"<tr><td>CPU温度</td><td class='right'>{CPU:.1f}</td><td>[℃]</td></tr>\n")
