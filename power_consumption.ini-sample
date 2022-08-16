@@ -37,6 +37,8 @@ db_url = postgresql://<username>:<password>@<hostname>/<dbname>
 #address = 60
 # ボタンまたはセンサの pin 番号
 #pin = 4
+# pull_upかどうか(ボタンならTrue、センサならFalse)
+# pull_up = False
 # 輝度(0〜255。0で消える)
 #contrast = 1
 

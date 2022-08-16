@@ -13,12 +13,13 @@ HEIGHT: int = 64
 class Display:
     """OLED Display."""
 
-    def __init__(self, address: int, pin: str, contrast: int) -> None:
+    def __init__(self, address: int, pin: str, pull_up: bool, contrast: int) -> None:
         """初期化.
 
         Args:
             address: OLED の I²Cアドレス
             pin: スイッチのpinアドレス
+            pull_up: pull_upするかどうか
             contrast: 輝度(0〜255)、0で消える。
         """
         i2c: board.I2C = board.I2C()
@@ -27,7 +28,7 @@ class Display:
         self.image: Image = Image.new("1", (self.oled.width, self.oled.height))
         self.draw: ImageDraw = ImageDraw.Draw(self.image)
         self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/horai-umefont/ume-tmo3.ttf", 16)
-        self.button: gpiozero.Button = gpiozero.Button(pin)
+        self.button: gpiozero.Button = gpiozero.Button(pin, pull_up=pull_up)
         self.is_pressed: bool = self.button.is_pressed
         self.is_display: bool = True
         if not self.is_pressed:
@@ -41,7 +42,7 @@ class Display:
         self.is_display = False
         self.oled.poweroff()
 
-    def redraw(self)->None:
+    def redraw(self) -> None:
         """画面描画."""
         if not self.is_display:
             self.oled.poweron()
@@ -49,7 +50,9 @@ class Display:
         self.oled.image(self.image)
         self.oled.show()
 
-    def update(self, co2: typ.Optional[int], temp: typ.Optional[float], hum: typ.Optional[float], pres: typ.Optional[float]) -> None:
+    def update(
+        self, co2: typ.Optional[int], temp: typ.Optional[float], hum: typ.Optional[float], pres: typ.Optional[float]
+    ) -> None:
         """画面を更新する.
 
         Args:
@@ -80,15 +83,18 @@ class Display:
                 self.redraw()
 
     def pressed(self) -> None:
+        """ボタンが押されたとき."""
         self.is_pressed = True
         if not self.is_display:
             self.redraw()
 
     def released(self) -> None:
+        """ボタンが離されたとき."""
         self.is_pressed = False
         self.last_released = time.perf_counter()
 
+
 if __name__ == "__main__":
-    display: Display = Display(0x3c, "4", 1)
+    display: Display = Display(0x3C, "4", False, 1)
     display.update(800, 12.3, 34.5, 1234.5)
     time.sleep(10)
