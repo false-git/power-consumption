@@ -43,3 +43,9 @@ create table bme280_log (
     humidity real,
     created_at timestamp not null default current_timestamp
 );
+drop table tsl2572_log;
+create table tsl2572_log (
+    id serial primary key,
+    illuminance real,
+    created_at timestamp not null default current_timestamp
+);

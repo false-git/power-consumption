@@ -10,7 +10,9 @@ import pandas as pd
 import db_store
 
 
-def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, bme280_data: typ.List) -> None:
+def make_temp_graph(
+    output_file: str, temp_data: typ.List, co2_data: typ.List, bme280_data: typ.List, tsl2572_data: typ.List
+) -> None:
     """グラフ作成.
 
     Args:
@@ -18,6 +20,7 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
         temp_data: 温度データ
         co2_data: CO2データ
         bme280_data: BME280のデータ
+        tsl2572_data: TSL2572のデータ
     """
     tooltips: typ.List[typ.Tuple[str, str]] = [
         ("time", "@time{%F %T}"),
@@ -71,6 +74,19 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
         tooltips.append(("気圧", "@pressure{0,0.0}"))
         deg_max = max(deg_max, int(df["temp3"].max()) + 10, int(df["humidity"].max()) + 10)
         y_axis_label += "/湿度[%]"
+    if len(tsl2572_data) > 0:
+        df4: pd.DataFrame = pd.DataFrame(tsl2572_data, columns=list(tsl2572_data[0].keys()))
+        df4 = df4.rename(columns={"created_at": "time"})
+        if num_data > 1:
+            df4["time"] = df4["time"].apply(lambda x: x.replace(second=0, microsecond=0))
+        df4 = df4[["time", "illuminance"]].drop_duplicates(subset="time")
+        if num_data > 1:
+            df = pd.merge(df, df4, on="time", how="outer").sort_values("time")
+        else:
+            df = df4
+        tooltips.append(("照度", "@illuminance{0.0}"))
+        deg_max = max(deg_max, int(df["illuminance"].max()) + 10)
+        y_axis_label += "/照度[lx]"
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(df)
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
@@ -101,6 +117,8 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
         fig.extra_y_ranges["pressure"] = bm.Range1d(min(990, df["pressure"].min()), max(1020, df["pressure"].max()))
         fig.add_layout(bm.LinearAxis(y_range_name="pressure", axis_label="気圧[hPa]"), "right")
         fig.line("time", "pressure", legend_label="気圧", line_color="deeppink", y_range_name="pressure", source=source)
+    if len(tsl2572_data) > 0:
+        fig.line("time", "illuminance", legend_label="照度", line_color="yellow", source=source)
 
     fig.legend.click_policy = "hide"
     fig.legend.location = "top_left"
@@ -144,9 +162,10 @@ def main() -> None:
     temp_data: typ.List = store.select_temp_log(start_time, end_time)
     co2_data: typ.List = store.select_co2_log(start_time, end_time)
     bme280_data: typ.List = store.select_bme280_log(start_time, end_time)
+    tsl2572_data: typ.List = store.select_tsl2572_log(start_time, end_time)
 
-    if len(temp_data) > 0 or len(co2_data) > 0 or len(bme280_data) > 0:
-        make_temp_graph(output_file, temp_data, co2_data, bme280_data)
+    if len(temp_data) > 0 or len(co2_data) > 0 or len(bme280_data) > 0 or len(tsl2572_data) > 0:
+        make_temp_graph(output_file, temp_data, co2_data, bme280_data, tsl2572_data)
         print(output_file)
     else:
         print("no data")
