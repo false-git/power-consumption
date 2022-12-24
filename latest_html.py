@@ -100,10 +100,14 @@ def main() -> None:
             out.write(f"<tr><td>気圧</td><td class='right'>{pres:.1f}</td><td>[hPa]</td></tr>\n")
         if data["tsl2572"] is not None:
             illuminance: float = data["tsl2572"]["illuminance"]
+            lux1: float = data["tsl2572"]["lux1"]
+            lux2: float = data["tsl2572"]["lux2"]
             illumi_color: str = "green"
-            if illuminance > 80:
+            if illuminance > 60:
                 illumi_color = "red"
             out.write(f"<tr><td>照度</td><td class='right {illumi_color}'>{illuminance:.1f}</td><td>[lx]</td></tr>\n")
+            out.write(f"<tr><td>　LUX1</td><td class='right'>{lux1:.1f}</td><td>[lx]</td></tr>\n")
+            out.write(f"<tr><td>　LUX2</td><td class='right'>{lux2:.1f}</td><td>[lx]</td></tr>\n")
         out.writelines(
             [
                 "</table>\n" "</body>\n",

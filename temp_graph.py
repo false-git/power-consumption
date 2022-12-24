@@ -118,7 +118,7 @@ def make_temp_graph(
         fig.add_layout(bm.LinearAxis(y_range_name="pressure", axis_label="気圧[hPa]"), "right")
         fig.line("time", "pressure", legend_label="気圧", line_color="deeppink", y_range_name="pressure", source=source)
     if len(tsl2572_data) > 0:
-        fig.line("time", "illuminance", legend_label="照度", line_color="yellow", source=source)
+        fig.line("time", "illuminance", legend_label="照度", line_color="gold", source=source)
 
     fig.legend.click_policy = "hide"
     fig.legend.location = "top_left"
