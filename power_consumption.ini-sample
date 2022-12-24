@@ -32,6 +32,16 @@ db_url = postgresql://<username>:<password>@<hostname>/<dbname>
 # IIRフィルタ(0: オフ、1: 2, 2: 4, 3: 8, 4: 16)
 #filter = 4
 
+[tsl2572]
+# I²Cバス
+#bus = 1
+# I²Cアドレス (57 = 0x39)
+#address = 57
+# ALS timing (192 = 175ms)
+#atime = 192
+# ALS gain(0 = 1x)
+#again = 0
+
 [ssd1306]
 # I²Cアドレス (60 = 0x3c)
 #address = 60
