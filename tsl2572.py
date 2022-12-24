@@ -128,21 +128,25 @@ class TSL2572:
         adc1: int = (dat[3] << 8) | dat[2]
         return (adc0, adc1)
 
-    def read(self) -> float:
+    def read(self) -> typ.Tuple[float, float, float, int, int]:
         """センサのデータを読み込む.
 
         Returns:
-            照度
+            (照度, lux1, lux2, ch0, ch1)
         """
         if not self.initialized:
-            return -1
+            return (-1, -1, -1, -1, -1)
         adc: typ.Tuple[int, int] = self.read_raw()
         lux1: float = ((adc[0] * 1.00) - (adc[1] * 1.87)) / self.CPL
         lux2: float = ((adc[0] * 0.63) - (adc[1] * 1.00)) / self.CPL
-        return max(lux1, lux2, 0)
+        return (max(lux1, lux2, 0), lux1, lux2, adc[0], adc[1])
 
 
 if __name__ == "__main__":
     tsl2572: TSL2572 = TSL2572()
-    illuminance: float = tsl2572.read()
-    print(f"照度: {illuminance:.2f}")
+    values: typ.Tuple[float, float, float, int, int] = tsl2572.read()
+    print(f"照度: {values[0]:.2f}")
+    print(f"LUX1: {values[1]:.2f}")
+    print(f"LUX2: {values[2]:.2f}")
+    print(f"CH0: {values[3]}")
+    print(f"CH1: {values[4]}")

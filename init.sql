@@ -47,5 +47,9 @@ drop table tsl2572_log;
 create table tsl2572_log (
     id serial primary key,
     illuminance real,
+    lux1 real,
+    lux2 real,
+    ch0 int,
+    ch1 int,
     created_at timestamp not null default current_timestamp
 );

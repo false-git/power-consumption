@@ -294,18 +294,18 @@ class PowerConsumption:
         self.add_zabbix("humidity", d[2])
         return d
 
-    def log_tsl2572(self) -> float:
+    def log_tsl2572(self) -> typ.Tuple[float, float, float, int, int]:
         """TSL2572の情報を記録する.
 
         Returns:
-            照度
+            (照度, lux1, lux2, ch0, ch1)
         """
-        illuminance: float = self.tsl2572.read()
+        values: typ.Tuple[float, float, float, int, int] = self.tsl2572.read()
         store: db_store.DBStore = db_store.DBStore(self.db_url)
-        store.tsl2572_log(illuminance)
+        store.tsl2572_log(values[0], values[1], values[2], values[3], values[4])
         del store
-        self.add_zabbix("illuminance", illuminance)
-        return illuminance
+        self.add_zabbix("illuminance", values[0])
+        return values
 
     def task(self) -> None:
         """1分間隔で繰り返し実行."""

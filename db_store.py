@@ -118,13 +118,20 @@ class DBStore:
         )
         self.connection.commit()
 
-    def tsl2572_log(self, illuminance: float) -> None:
+    def tsl2572_log(self, illuminance: float, lux1: float, lux2: float, ch0: int, ch1: int) -> None:
         """TSL2572の計測結果を登録する.
 
         Args:
             illuminance: 照度
+            lux1: lux1
+            lux2: lux2
+            ch0: ch0
+            ch1: ch1
         """
-        self.cursor.execute("insert into tsl2572_log (illuminance) values (%s)", (illuminance,))
+        self.cursor.execute(
+            "insert into tsl2572_log (illuminance, lux1, lux2, ch0, ch1) values (%s, %s, %s, %s, %s)",
+            (illuminance, lux1, lux2, ch0, ch1),
+        )
         self.connection.commit()
 
     def select_scan_log(
