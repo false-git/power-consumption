@@ -1,5 +1,5 @@
 """access TSL2572 via I2C."""
-
+import time
 import typing as typ
 import smbus
 
@@ -18,6 +18,10 @@ TSL2572_AIEN = 0x10  # ALS interrupt mask
 TSL2572_WEN = 0x08  # Wait enable
 TSL2572_AEN = 0x02  # ALS Enable
 TSL2572_PON = 0x01  # Power ON
+
+# Status Register
+TSL2572_AINT = 0x10  # ALS Interrupt.
+TSL2572_AVALID = 0x01  # ALS Valid.
 
 # Register ID
 TSL2572_ENABLE = 0x00
@@ -75,21 +79,22 @@ class TSL2572:
         self.i2c_address: int = address
         self.atime: int = atime
         self.initialized: bool = False
+        self.retryout: bool = False
         GA: int = 1  # glass attenuation
         self.CPL: float = (2.73 * (256 - self.atime) * AGAIN[again]) / (GA * 60.0)
 
-        if self.read_reg(TSL2572_COMMAND | TSL2572_TYPE_INC | TSL2572_ID) != 0x34:
+        if self.read_reg(TSL2572_ID) != 0x34:
             # check TSL25721 ID
             return
 
         # gain(0x00 = 1x)
-        self.write_reg(TSL2572_COMMAND | TSL2572_TYPE_INC | TSL2572_CONTROL, 0x00)
+        self.write_reg(TSL2572_CONTROL, 0x00)
         # AGL(0 = AGAIN scaled by 1), WLONG(WTIME scaled by 1)
-        self.write_reg(TSL2572_COMMAND | TSL2572_TYPE_INC | TSL2572_CONFIG, 0x00)
+        self.write_reg(TSL2572_CONFIG, 0x00)
         # ATIME
-        self.write_reg(TSL2572_COMMAND | TSL2572_TYPE_INC | TSL2572_ATIME, atime)
-        # Enable register(ALS Enable, Power ON)
-        self.write_reg(TSL2572_COMMAND | TSL2572_TYPE_INC | TSL2572_ENABLE, TSL2572_AEN | TSL2572_PON)
+        self.write_reg(TSL2572_ATIME, atime)
+        # Enable register(Power OFF)
+        self.write_reg(TSL2572_ENABLE, 0)
 
         self.initialized = True
 
@@ -102,7 +107,7 @@ class TSL2572:
             reg_address: レジスタアドレス
             data: データ(1byte)
         """
-        self.bus.write_byte_data(self.i2c_address, reg_address, data)
+        self.bus.write_byte_data(self.i2c_address, TSL2572_COMMAND | TSL2572_TYPE_INC | reg_address, data)
 
     def read_reg(self, reg_address: int) -> int:
         """レジスタの読み込み.
@@ -113,7 +118,7 @@ class TSL2572:
         Returns:
             読み出したデータ
         """
-        return self.bus.read_byte_data(self.i2c_address, reg_address)
+        return self.bus.read_byte_data(self.i2c_address, TSL2572_COMMAND | TSL2572_TYPE_INC | reg_address)
 
     def read_raw(self) -> typ.Tuple[int, int]:
         """センサの生データを読み込む.
@@ -121,6 +126,18 @@ class TSL2572:
         Returns:
             生データのTuple(CH0、CH1)
         """
+        # Enable register(Sleep after interrupt, ALS Enable, Power ON)
+        self.write_reg(TSL2572_ENABLE, TSL2572_SAI | TSL2572_AEN | TSL2572_PON)
+        mask: int = TSL2572_AINT | TSL2572_AVALID
+        retryout: bool = True
+        for i in range(100):  # 100回までリトライ。0.01秒sleepなので1秒まで
+            status: int = self.read_reg(TSL2572_STATUS)
+            if status & mask == mask:
+                retryout = False
+                break
+            time.sleep(0.01)
+        self.retryout = retryout
+
         dat: typ.List[int] = self.bus.read_i2c_block_data(
             self.i2c_address, TSL2572_COMMAND | TSL2572_TYPE_INC | TSL2572_C0DATA, 4
         )
