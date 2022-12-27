@@ -90,7 +90,7 @@ def make_temp_graph(
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(df)
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
-    hover_renderers: typ.List = []
+    hover_renderers: typ.List[bm.GlyphRenderer] = []
 
     bp.output_file(output_file, title="Temperature")
     fig: bp.figure = bp.figure(
@@ -130,25 +130,22 @@ def make_temp_graph(
         )
         start_time: typ.Optional[datetime.datetime] = None
         prev_time: typ.Optional[datetime.datetime] = None
-        x: typ.List = []
-        w: typ.List = []
-        width_unit: datetime.timedelta = datetime.timedelta(minutes=1)
+        left: typ.List = []
+        right: typ.List = []
         for ctime, illuminance in zip(df["time"], df["illuminance"]):
             if illuminance > 60:
                 if start_time is None:
                     start_time = ctime
             else:
                 if start_time is not None and prev_time is not None:
-                    width: datetime.timedelta = prev_time - start_time + width_unit
-                    x.append(start_time + width / 2)
-                    w.append(width)
+                    left.append(start_time)
+                    right.append(prev_time)
                     start_time = None
             prev_time = ctime
         if start_time is not None:
-            width = ctime - start_time + width_unit
-            x.append(start_time + width / 2)
-            w.append(width)
-        fig.rect(x, deg_max / 2, w, deg_max, color="gold", alpha=0.1)
+            left.append(start_time)
+            right.append(ctime)
+        fig.quad(top=deg_max, bottom=0, left=left, right=right, color="gold", alpha=0.1)
 
     hover_tool.renderers = hover_renderers
 
