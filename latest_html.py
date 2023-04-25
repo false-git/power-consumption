@@ -110,7 +110,9 @@ def main() -> None:
             out.write(f"<tr><td>　LUX2</td><td class='right'>{lux2:.1f}</td><td>[lx]</td></tr>\n")
         out.writelines(
             [
-                "</table>\n" "</body>\n",
+                "</table>\n",
+                "<!--#include file='camera.html' -->",
+                "</body>\n",
                 "</html>\n",
             ]
         )
