@@ -10,7 +10,9 @@ import pandas as pd
 import db_store
 
 
-def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, bme280_data: typ.List) -> None:
+def make_temp_graph(
+    output_file: str, temp_data: typ.List, co2_data: typ.List, bme280_data: typ.List, tsl2572_data: typ.List
+) -> None:
     """グラフ作成.
 
     Args:
@@ -18,6 +20,7 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
         temp_data: 温度データ
         co2_data: CO2データ
         bme280_data: BME280のデータ
+        tsl2572_data: TSL2572のデータ
     """
     tooltips: typ.List[typ.Tuple[str, str]] = [
         ("time", "@time{%F %T}"),
@@ -71,9 +74,23 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
         tooltips.append(("気圧", "@pressure{0,0.0}"))
         deg_max = max(deg_max, int(df["temp3"].max()) + 10, int(df["humidity"].max()) + 10)
         y_axis_label += "/湿度[%]"
+    if len(tsl2572_data) > 0:
+        df4: pd.DataFrame = pd.DataFrame(tsl2572_data, columns=list(tsl2572_data[0].keys()))
+        df4 = df4.rename(columns={"created_at": "time"})
+        if num_data > 1:
+            df4["time"] = df4["time"].apply(lambda x: x.replace(second=0, microsecond=0))
+        df4 = df4[["time", "illuminance"]].drop_duplicates(subset="time")
+        if num_data > 1:
+            df = pd.merge(df, df4, on="time", how="outer").sort_values("time")
+        else:
+            df = df4
+        tooltips.append(("照度", "@illuminance{0.0}"))
+        deg_max = max(deg_max, int(df["illuminance"].max()) + 10)
+        y_axis_label += "/照度[lx]"
 
     source: bp.ColumnDataSource = bp.ColumnDataSource(df)
     hover_tool: bm.HoverTool = bm.HoverTool(tooltips=tooltips, formatters={"@time": "datetime"})
+    hover_renderers: typ.List[bm.GlyphRenderer] = []
 
     bp.output_file(output_file, title="Temperature")
     fig: bp.figure = bp.figure(
@@ -88,19 +105,49 @@ def make_temp_graph(output_file: str, temp_data: typ.List, co2_data: typ.List, b
     fig.xaxis.formatter = bm.DatetimeTickFormatter(hours=fmt, hourmin=fmt, minutes=fmt)
     fig.y_range = bm.Range1d(0, deg_max)
     if len(temp_data) > 0:
-        fig.line("time", "temp", legend_label="CPU温度", line_color="red", source=source)
+        hover_renderers.append(fig.line("time", "temp", legend_label="CPU温度", line_color="red", source=source))
     if len(co2_data) > 0:
         if len(bme280_data) == 0:
-            fig.line("time", "temp2", legend_label="気温", line_color="darkorange", source=source)
+            hover_renderers.append(fig.line("time", "temp2", legend_label="気温", line_color="darkorange", source=source))
         fig.extra_y_ranges["ppm"] = bm.Range1d(0, max(2000, df["co2"].max() * 1.05))
         fig.add_layout(bm.LinearAxis(y_range_name="ppm", axis_label="濃度[ppm]"), "right")
-        fig.line("time", "co2", legend_label="CO₂", line_color="green", y_range_name="ppm", source=source)
+        hover_renderers.append(
+            fig.line("time", "co2", legend_label="CO₂", line_color="green", y_range_name="ppm", source=source)
+        )
     if len(bme280_data) > 0:
-        fig.line("time", "temp3", legend_label="気温", line_color="darkorange", source=source)
-        fig.line("time", "humidity", legend_label="湿度", line_color="blue", source=source)
+        hover_renderers.append(fig.line("time", "temp3", legend_label="気温", line_color="darkorange", source=source))
+        hover_renderers.append(fig.line("time", "humidity", legend_label="湿度", line_color="blue", source=source))
         fig.extra_y_ranges["pressure"] = bm.Range1d(min(990, df["pressure"].min()), max(1020, df["pressure"].max()))
         fig.add_layout(bm.LinearAxis(y_range_name="pressure", axis_label="気圧[hPa]"), "right")
-        fig.line("time", "pressure", legend_label="気圧", line_color="deeppink", y_range_name="pressure", source=source)
+        hover_renderers.append(
+            fig.line(
+                "time", "pressure", legend_label="気圧", line_color="deeppink", y_range_name="pressure", source=source
+            )
+        )
+    if len(tsl2572_data) > 0:
+        hover_renderers.append(
+            fig.line("time", "illuminance", legend_label="照度", line_color="gold", source=source, visible=False)
+        )
+        start_time: typ.Optional[datetime.datetime] = None
+        prev_time: typ.Optional[datetime.datetime] = None
+        left: typ.List = []
+        right: typ.List = []
+        for ctime, illuminance in zip(df["time"], df["illuminance"]):
+            if illuminance > 60:
+                if start_time is None:
+                    start_time = ctime
+            else:
+                if start_time is not None and prev_time is not None:
+                    left.append(start_time)
+                    right.append(prev_time)
+                    start_time = None
+            prev_time = ctime
+        if start_time is not None:
+            left.append(start_time)
+            right.append(ctime)
+        fig.quad(top=deg_max, bottom=0, left=left, right=right, color="gold", alpha=0.1)
+
+    hover_tool.renderers = hover_renderers
 
     fig.legend.click_policy = "hide"
     fig.legend.location = "top_left"
@@ -144,9 +191,10 @@ def main() -> None:
     temp_data: typ.List = store.select_temp_log(start_time, end_time)
     co2_data: typ.List = store.select_co2_log(start_time, end_time)
     bme280_data: typ.List = store.select_bme280_log(start_time, end_time)
+    tsl2572_data: typ.List = store.select_tsl2572_log(start_time, end_time)
 
-    if len(temp_data) > 0 or len(co2_data) > 0 or len(bme280_data) > 0:
-        make_temp_graph(output_file, temp_data, co2_data, bme280_data)
+    if len(temp_data) > 0 or len(co2_data) > 0 or len(bme280_data) > 0 or len(tsl2572_data) > 0:
+        make_temp_graph(output_file, temp_data, co2_data, bme280_data, tsl2572_data)
         print(output_file)
     else:
         print("no data")

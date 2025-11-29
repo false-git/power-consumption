@@ -14,6 +14,7 @@ import echonet
 import skcommand
 import mh_z19
 import bme280
+import tsl2572
 
 
 class PowerConsumption:
@@ -65,6 +66,7 @@ class PowerConsumption:
         parser.add_argument("-t", "--temp", action="store_true", help="log Raspberry pi temp")
         parser.add_argument("-c", "--co2", action="store_true", help="log MH-Z19 CO2")
         parser.add_argument("-b", "--bme280", action="store_true", help="log BME280")
+        parser.add_argument("-l", "--tsl2572", action="store_true", help="log TSL2572")
         parser.add_argument("-d", "--display", action="store_true", help="enable display")
 
         args: argparse.Namespace = parser.parse_args()
@@ -83,6 +85,7 @@ class PowerConsumption:
         self.temp_flag = args.temp
         self.co2_flag = args.co2
         self.bme280_flag = args.bme280
+        self.tsl2572_flag = args.tsl2572
         self.display_flag = args.display
         if self.bme280_flag:
             bus: int = self.inifile.getint("bme280", "bus", fallback=1)
@@ -101,6 +104,12 @@ class PowerConsumption:
                 t_sb=t_sb,
                 filter=filter,
             )
+        if self.tsl2572_flag:
+            tsl2572_bus: int = self.inifile.getint("tsl2572", "bus", fallback=1)
+            tsl2572_address: int = self.inifile.getint("tsl2572", "address", fallback=0x39)
+            atime: int = self.inifile.getint("tsl2572", "atime", fallback=0xC0)
+            again: int = self.inifile.getint("tsl2572", "again", fallback=0)
+            self.tsl2572 = tsl2572.TSL2572(tsl2572_bus, tsl2572_address, atime=atime, again=again)
         if self.display_flag:
             display_address: int = self.inifile.getint("ssd1306", "address", fallback=0x3C)
             button_pin: str = self.inifile.get("ssd1306", "pin", fallback="4")
@@ -285,6 +294,19 @@ class PowerConsumption:
         self.add_zabbix("humidity", d[2])
         return d
 
+    def log_tsl2572(self) -> typ.Tuple[float, float, float, int, int]:
+        """TSL2572の情報を記録する.
+
+        Returns:
+            (照度, lux1, lux2, ch0, ch1)
+        """
+        values: typ.Tuple[float, float, float, int, int] = self.tsl2572.read()
+        store: db_store.DBStore = db_store.DBStore(self.db_url)
+        store.tsl2572_log(values[0], values[1], values[2], values[3], values[4])
+        del store
+        self.add_zabbix("illuminance", values[0])
+        return values
+
     def task(self) -> None:
         """1分間隔で繰り返し実行."""
         interval: int = 60
@@ -303,6 +325,8 @@ class PowerConsumption:
                 (co2, temp) = self.log_co2()
             if self.bme280_flag:
                 (pres, temp, hum) = self.log_bme280()
+            if self.tsl2572_flag and self.tsl2572.initialized:
+                self.log_tsl2572()
             if self.sk_flag:
                 if self.connected:
                     if not self.get_prop():

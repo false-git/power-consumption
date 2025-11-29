@@ -118,6 +118,22 @@ class DBStore:
         )
         self.connection.commit()
 
+    def tsl2572_log(self, illuminance: float, lux1: float, lux2: float, ch0: int, ch1: int) -> None:
+        """TSL2572の計測結果を登録する.
+
+        Args:
+            illuminance: 照度
+            lux1: lux1
+            lux2: lux2
+            ch0: ch0
+            ch1: ch1
+        """
+        self.cursor.execute(
+            "insert into tsl2572_log (illuminance, lux1, lux2, ch0, ch1) values (%s, %s, %s, %s, %s)",
+            (illuminance, lux1, lux2, ch0, ch1),
+        )
+        self.connection.commit()
+
     def select_scan_log(
         self, start_time: datetime.datetime, end_time: datetime.datetime
     ) -> typ.List[psycopg2.extras.DictRow]:
@@ -208,6 +224,24 @@ class DBStore:
         )
         return self.cursor.fetchall()
 
+    def select_tsl2572_log(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> typ.List[psycopg2.extras.DictRow]:
+        """tsl2572_logからデータ取得.
+
+        Args:
+            start_time: 取得範囲の最初(start_timeを含む)
+            end_time: 取得範囲の最初(end_timeを含まない)
+
+        Returns:
+            データ
+        """
+        self.cursor.execute(
+            "select * from tsl2572_log where created_at >= %s and created_at < %s order by created_at",
+            (start_time, end_time),
+        )
+        return self.cursor.fetchall()
+
     def select_latest_log(self, moving_start: datetime.datetime) -> typ.Dict:
         """最新のログを返す.
 
@@ -231,4 +265,6 @@ class DBStore:
         result["co2"] = self.cursor.fetchone()
         self.cursor.execute("select * from bme280_log order by created_at desc limit 1")
         result["bme280"] = self.cursor.fetchone()
+        self.cursor.execute("select * from tsl2572_log order by created_at desc limit 1")
+        result["tsl2572"] = self.cursor.fetchone()
         return result
