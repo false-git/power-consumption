@@ -2,13 +2,13 @@
 
 import argparse
 import configparser
-from oled_ssd1306 import Display
 import re
 import struct
 import subprocess
 import sys
 import time
 import typing as typ
+import yaml  # type: ignore
 import db_store
 import echonet
 import skcommand
@@ -111,11 +111,7 @@ class PowerConsumption:
             again: int = self.inifile.getint("tsl2572", "again", fallback=0)
             self.tsl2572 = tsl2572.TSL2572(tsl2572_bus, tsl2572_address, atime=atime, again=again)
         if self.display_flag:
-            display_address: int = self.inifile.getint("ssd1306", "address", fallback=0x3C)
-            button_pin: str = self.inifile.get("ssd1306", "pin", fallback="4")
-            pull_up: bool = self.inifile.getboolean("ssd1306", "pull_up", fallback=False)
-            contrast: int = self.inifile.getint("ssd1306", "contrast", fallback=1)
-            self.display = Display(display_address, button_pin, pull_up, contrast)
+            self.data_path: str = self.inifile.get("ssd1306", "data_path", fallback="display.dat")
 
         if not self.sk.routeB_auth(self.routeB_id, self.routeB_password):
             print("ルートBの認証情報の設定に失敗しました。")
@@ -342,7 +338,9 @@ class PowerConsumption:
                     else:
                         wait_counter = 10
             if self.display_flag:
-                self.display.update(co2, temp, hum, pres)
+                with open(self.data_path, "w") as f:
+                    data = {"co2": co2, "temp": temp, "hum": hum, "pres": pres}
+                    yaml.dump(data, f)
             if self.zabbix_trap:
                 self.zabbix_trap.close()
                 with open("zabbix.log", "wt") as zabbix_log:
