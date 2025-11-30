@@ -1,10 +1,10 @@
 """SSD1306 OLED Display."""
+
 import time
 import typing as typ
-import board
-import adafruit_ssd1306
-import gpiozero
-from PIL import Image, ImageDraw, ImageFont
+import board  # type: ignore
+import adafruit_ssd1306  # type: ignore
+from PIL import Image, ImageDraw, ImageFont  # type: ignore
 
 WIDTH: int = 128
 HEIGHT: int = 64
@@ -13,13 +13,11 @@ HEIGHT: int = 64
 class Display:
     """OLED Display."""
 
-    def __init__(self, address: int, pin: str, pull_up: bool, contrast: int) -> None:
+    def __init__(self, address: int, contrast: int) -> None:
         """初期化.
 
         Args:
             address: OLED の I²Cアドレス
-            pin: スイッチのpinアドレス
-            pull_up: pull_upするかどうか
             contrast: 輝度(0〜255)、0で消える。
         """
         i2c: board.I2C = board.I2C()
@@ -28,14 +26,7 @@ class Display:
         self.image: Image = Image.new("1", (self.oled.width, self.oled.height))
         self.draw: ImageDraw = ImageDraw.Draw(self.image)
         self.font: ImageFont = ImageFont.truetype("/usr/share/fonts/truetype/horai-umefont/ume-tmo3.ttf", 16)
-        self.button: gpiozero.Button = gpiozero.Button(pin, pull_up=pull_up)
-        self.is_pressed: bool = self.button.is_pressed
         self.is_display: bool = True
-        if not self.is_pressed:
-            self.clear()
-        self.last_released: float = time.perf_counter()
-        self.button.when_pressed = self.pressed
-        self.button.when_released = self.released
 
     def clear(self) -> None:
         """画面消去."""
@@ -76,25 +67,8 @@ class Display:
             self.draw.text((0, y), f"気圧 {pres:6.1f} hPa", font=self.font, fill=255)
             y += 16
 
-        if self.is_display:
-            if not self.is_pressed and time.perf_counter() > self.last_released + 30:
-                self.clear()
-            else:
-                self.redraw()
-
-    def pressed(self) -> None:
-        """ボタンが押されたとき."""
-        self.is_pressed = True
-        if not self.is_display:
-            self.redraw()
-
-    def released(self) -> None:
-        """ボタンが離されたとき."""
-        self.is_pressed = False
-        self.last_released = time.perf_counter()
-
 
 if __name__ == "__main__":
-    display: Display = Display(0x3C, "4", False, 1)
+    display: Display = Display(0x3C, 1)
     display.update(800, 12.3, 34.5, 1234.5)
     time.sleep(10)
