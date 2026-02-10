@@ -54,7 +54,7 @@ class DisplayController:
         self.button: gpiozero.Button = gpiozero.Button(button_pin, pull_up=button_pull_up)
         self.door: gpiozero.Button = gpiozero.Button(door_pin, pull_up=door_pull_up)
         self.light_timer: Optional[Timer] = None
-        self.light: Light = Light(token, secret, device_id)
+        self.light: Light = Light(token, secret, device_id, debug_mode)
 
         self.is_pressed: bool = self.button.is_pressed
         self.is_opend: bool = not self.door.is_pressed

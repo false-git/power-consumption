@@ -1,5 +1,6 @@
 """Light on SwitchBot."""
 
+from datetime import datetime
 import time
 from typing import Optional
 from switchbot import SwitchBot, Device  # type: ignore
@@ -8,13 +9,14 @@ from switchbot import SwitchBot, Device  # type: ignore
 class Light:
     """Light."""
 
-    def __init__(self, token: str, secret: str, device_id: str) -> None:
+    def __init__(self, token: str, secret: str, device_id: str, debug: bool) -> None:
         """初期化.
 
         Args:
             token: APIアクセストークン
             secret: アクセスシークレット
             device_id: 制御するデバイスID
+            debug: デバッグモード
         """
         self.token: str = token
         self.secret: str = secret
@@ -22,11 +24,17 @@ class Light:
         self.light: Optional[Device] = None
         self.cache_time: float = 0.0
         self.is_on_cache: bool = False
+        self.debug_mode: bool = debug
         if device_id:
             for device in switchbot.devices():
                 if device.id == device_id:
                     self.light = device
                     self.is_on_cache = self.is_on()
+
+    def debug(self, msg: str) -> None:
+        """デバッグ表示."""
+        if self.debug_mode:
+            print(f"{datetime.now()} {msg}")
 
     def is_on(self) -> bool:
         """ライトがついているか.
@@ -41,8 +49,10 @@ class Light:
         now: float = time.perf_counter()
         if self.light and now - self.cache_time > 30 * 60:
             try:
-                self.is_on_cache = self.light.status()["power"] == "on"
+                status = self.light.status()
+                self.is_on_cache = status["power"] == "on"
                 self.cache_time = now
+                self.debug(f"light status: {status}")
             except Exception as exc:
                 print(exc)
         return self.is_on_cache
@@ -57,6 +67,7 @@ class Light:
                     self.light.command("turnOn")
                     self.is_on_cache = True
                     self.cache_time = time.perf_counter()
+                    self.debug("light turned on")
             except Exception as exc:
                 print(exc)
 
@@ -75,6 +86,7 @@ class Light:
                     self.light.command("turnOff")
                     self.is_on_cache = False
                     self.cache_time = time.perf_counter()
+                    self.debug("light turned off")
                 result = True
             except Exception as exc:
                 print(exc)
