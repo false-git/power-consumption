@@ -15,11 +15,12 @@ smbus = {version = "*", optional = true}
 gpiozero = {version = "*", optional = true}
 adafruit-circuitpython-ssd1306 = {version = "*", optional = true}
 Pillow = {version = "*", optional = true}
-watchfiles = {version = "^1.1.1", extras = ["poller"]}
-pyyaml = {version = "^6.0.3", extras = ["poller"]}
+watchfiles = {version = "*", optional = true}
+pyyaml = {version = "*", optional = true}
+python-switchbot = {version = "*", optional = true}
 
 [tool.poetry.extras]
-poller = ["pyserial", "mh-z19", "smbus", "gpiozero", "adafruit-circuitpython-ssd1306", "Pillow"]
+poller = ["pyserial", "mh-z19", "smbus", "gpiozero", "adafruit-circuitpython-ssd1306", "Pillow", "watchfiles", "pyyaml", "python-switchbot"]
 graph = ["bokeh", "pandas"]
 
 [tool.poetry.dev-dependencies]

@@ -61,3 +61,11 @@ db_url = postgresql://<username>:<password>@<hostname>/<dbname>
 #host = <hostname of data>
 # Zabbix key prefix
 #key_prefix = pc
+
+[switchbot]
+# SwitchBot access token
+#token = <token>
+# SwitchBot access secret
+#secret = <secret>
+# SwitchBot control device id
+#device_id = <device_id
